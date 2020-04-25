@@ -1,0 +1,21 @@
+[
+    {
+        "label": "bottle",
+        "left_ROI": {
+            "origin": {
+                "x": 80,
+                "y": 46
+            },
+            "width": 469,
+            "height": 433
+        },
+        "right_ROI": {
+            "origin": {
+                "x": 366,
+                "y": 65
+            },
+            "width": 160,
+            "height": 383
+        }
+    }
+]
