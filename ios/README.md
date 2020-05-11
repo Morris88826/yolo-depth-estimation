@@ -15,7 +15,7 @@ The model files are downloaded via scripts in Xcode when you build and run. You 
 
 * You must have Xcode installed
 
-* You must have a valid Apple Developer ID
+* You must have a valid Apple ID. (It does not need to be a Developer one.)
 
 * The demo app requires a camera and must be executed on a real iOS device. You can build it and run with the iPhone Simulator but the app raises a camera not found exception.
 
