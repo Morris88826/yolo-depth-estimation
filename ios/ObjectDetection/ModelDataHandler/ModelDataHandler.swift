@@ -1,16 +1,4 @@
-// Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Modified from the TensorFlow Example
 
 import CoreImage
 import TensorFlowLite
@@ -25,6 +13,7 @@ struct Result {
 
 /// Stores one formatted inference.
 struct Inference {
+  /// TODO: Add distance (disparity map format?)
   let confidence: Float
   let className: String
   let rect: CGRect
@@ -34,8 +23,9 @@ struct Inference {
 /// Information about a model file or labels file.
 typealias FileInfo = (name: String, extension: String)
 
-/// Information about the MobileNet SSD model.
-enum MobileNetSSD {
+/// Information about the Yolo model.
+enum Yolo {
+  // TODO: Change the filename
   static let modelInfo: FileInfo = (name: "detect", extension: "tflite")
   static let labelsInfo: FileInfo = (name: "labelmap", extension: "txt")
 }
@@ -53,17 +43,20 @@ class ModelDataHandler: NSObject {
   let threshold: Float = 0.5
 
   // MARK: Model parameters
-  let batchSize = 1
+  let batchSize = 2   /// We need a pair of photos each time
   let inputChannels = 3
-  let inputWidth = 300
-  let inputHeight = 300
+  let inputWidth = 416 /// The Width and Height of YOLO should better be a multiple of 32
+  let inputHeight = 416
 
   // MARK: Private properties
   private var labels: [String] = []
 
   /// TensorFlow Lite `Interpreter` object for performing inference on a given model.
+  /// It just does the "interpreting .TFLite" job and doesn't change the in/out format.
+  /// View it as an API for model.
   private var interpreter: Interpreter
 
+  /// The 4th channel is alpha, the mask for a transparent image. We do not need it.
   private let bgraPixel = (channels: 4, alphaComponent: 3, lastBgrComponent: 2)
   private let rgbPixelChannels = 3
   private let colorStrideValue = 10
@@ -199,6 +192,7 @@ class ModelDataHandler: NSObject {
       let score = outputScores[i]
 
       // Filters results with confidence < threshold.
+      /// TODO: Configure the threshold
       guard score >= threshold else {
         continue
       }
