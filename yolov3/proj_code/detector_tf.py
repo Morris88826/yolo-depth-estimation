@@ -41,8 +41,8 @@ class Detector():
         for i, batch in enumerate(im_batches):
 
             start = time.time()
-            output = self.model(tf.Variable(batch))
-            prediction = get_prediction(output, confidence, num_classes, nms_threshold = nms_thesh)
+            prediction = self.model(tf.Variable(batch))
+            prediction = get_prediction(prediction, confidence, num_classes, nms_threshold = nms_thesh)
             
             end = time.time()
 
