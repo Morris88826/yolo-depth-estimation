@@ -2,3 +2,4 @@
 yolov3/weights/*
 yolov3/results/*
 */.DS_Store
+*/__pycache__/*
