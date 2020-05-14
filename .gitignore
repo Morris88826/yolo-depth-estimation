@@ -3,12 +3,10 @@ yolov3/weights/*
 yolov3/results/*
 
 # MacOS-generated directory metadata
-ios/.DS_Store
-yolov3/.DS_Store
-yolov3/proj_code/.DS_Store
+**/.DS_Store
 
 # Caches
-yolov3/proj_code/__pycache__/*
+**/*.pyc
 
 # Developer-dependent
 ios/ObjectDetection.xcodeproj/project.pbxproj

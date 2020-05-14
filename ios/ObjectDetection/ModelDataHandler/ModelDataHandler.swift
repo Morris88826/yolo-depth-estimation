@@ -132,10 +132,14 @@ class ModelDataHandler: NSObject {
     }
 
     let interval: TimeInterval
-    let outputBoundingBox: Tensor
-    let outputClasses: Tensor
+//    let outputBatchId: Tensor // TODO: Remove BatchId if it's not used
+    let outputBoundingBoxLeft: Tensor
+    let outputBoundingBoxTop: Tensor
+    let outputBoundingBoxRight: Tensor
+    let outputBoundingBoxBottom: Tensor
+    let outputConfidence: Tensor
     let outputScores: Tensor
-    let outputCount: Tensor
+    let outputClasses: Tensor
     do {
       let inputTensor = try interpreter.input(at: 0)
 
@@ -157,21 +161,31 @@ class ModelDataHandler: NSObject {
       try interpreter.invoke()
       interval = Date().timeIntervalSince(startDate) * 1000
 
-      outputBoundingBox = try interpreter.output(at: 0)
-      outputClasses = try interpreter.output(at: 1)
-      outputScores = try interpreter.output(at: 2)
-      outputCount = try interpreter.output(at: 3)
+//      outputBatchId = try interpreter.output(at: 0)
+      outputBoundingBoxLeft = try interpreter.output(at: 1)
+      outputBoundingBoxTop = try interpreter.output(at: 2)
+      outputBoundingBoxRight = try interpreter.output(at: 3)
+      outputBoundingBoxBottom = try interpreter.output(at: 4)
+      outputConfidence = try interpreter.output(at: 5)
+      outputScores = try interpreter.output(at: 6)
+      outputClasses = try interpreter.output(at: 7)
     } catch let error {
       print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
       return nil
     }
+    
+    // Make the results compatible to resultArray
+    
 
     // Formats the results
     let resultArray = formatResults(
-      boundingBox: [Float](unsafeData: outputBoundingBox.data) ?? [],
-      outputClasses: [Float](unsafeData: outputClasses.data) ?? [],
+      boundingBoxLeft: [Int](unsafeData: outputBoundingBoxLeft.data) ?? [],
+      boundingBoxTop: [Int](unsafeData: outputBoundingBoxTop.data) ?? [],
+      boundingBoxRight: [Int](unsafeData: outputBoundingBoxRight.data) ?? [],
+      boundingBoxBottom: [Int](unsafeData: outputBoundingBoxBottom.data) ?? [],
+      outputConfidence: [Float](unsafeData: outputConfidence.data) ?? [],
       outputScores: [Float](unsafeData: outputScores.data) ?? [],
-      outputCount: Int(([Float](unsafeData: outputCount.data) ?? [0])[0]),
+      outputClasses: [Int](unsafeData: outputClasses.data) ?? [],
       width: CGFloat(imageWidth),
       height: CGFloat(imageHeight)
     )
@@ -183,14 +197,16 @@ class ModelDataHandler: NSObject {
 
   /// Filters out all the results with confidence score < threshold and returns the top N results
   /// sorted in descending order.
-  func formatResults(boundingBox: [Float], outputClasses: [Float], outputScores: [Float], outputCount: Int, width: CGFloat, height: CGFloat) -> [Inference]{
+  func formatResults(boundingBoxLeft: [Int], boundingBoxTop: [Int], boundingBoxRight: [Int], boundingBoxBottom: [Int],
+                     outputConfidence: [Float], outputScores: [Float], outputClasses: [Int],
+                     width: CGFloat, height: CGFloat) -> [Inference]{
     var resultsArray: [Inference] = []
-    if (outputCount == 0) {
+    if (outputClasses.count == 0) {
       return resultsArray
     }
-    for i in 0...outputCount - 1 {
+    for i in 0...outputClasses.count - 1 {
 
-      let score = outputScores[i]
+      let score = outputConfidence[i] * outputScores[i] /// TODO: Check if this should be confidence, score, or both like this
 
       // Filters results with confidence < threshold.
       guard score >= threshold else {
@@ -204,10 +220,10 @@ class ModelDataHandler: NSObject {
       var rect: CGRect = CGRect.zero
 
       // Translates the detected bounding box to CGRect.
-      rect.origin.y = CGFloat(boundingBox[4*i])
-      rect.origin.x = CGFloat(boundingBox[4*i+1])
-      rect.size.height = CGFloat(boundingBox[4*i+2]) - rect.origin.y
-      rect.size.width = CGFloat(boundingBox[4*i+3]) - rect.origin.x
+      rect.origin.y = CGFloat(boundingBoxTop[i])
+      rect.origin.x = CGFloat(boundingBoxLeft[i])
+      rect.size.height = CGFloat(boundingBoxBottom[i]) - rect.origin.y
+      rect.size.width = CGFloat(boundingBoxRight[i]) - rect.origin.x
 
       // The detected corners are for model dimensions. So we scale the rect with respect to the
       // actual image dimensions.
