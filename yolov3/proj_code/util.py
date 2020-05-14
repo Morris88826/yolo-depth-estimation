@@ -34,7 +34,9 @@ def predict_bounding_box(prediction, input_dim, anchors, num_classes, CUDA):
     batch_size, H, W, _ = prediction.shape # channel last
     if batch_size == None:
         return None
+
     stride = input_dim // H
+    # print(H)
     
     grid_size = input_dim //stride
     num_bounding_box = len(anchors)
@@ -50,26 +52,27 @@ def predict_bounding_box(prediction, input_dim, anchors, num_classes, CUDA):
     prediction = prediction[:,:,4].assign(tf.sigmoid(prediction[:,:,4]))
 
     anchors = [(a[0]/stride, a[1]/stride) for a in anchors]
-
     xv, yv = np.meshgrid(np.arange(grid_size), np.arange(grid_size))
     
     cx = tf.reshape(tf.constant(xv, dtype=tf.float32), [-1,1])
     cy = tf.reshape(tf.constant(yv, dtype=tf.float32), [-1,1])
 
     offset = tf.concat((cx,cy), axis=1)
-    offset = tf.repeat(offset, repeats=3, axis=0) # shape = (grid_size*grid_size*B)x(5+C)  
+    offset = tf.repeat(offset, repeats=num_bounding_box, axis=0) # shape = (grid_size*grid_size*B)x(5+C)  
     offset = tf.expand_dims(offset, 0) # shape = 1x(grid_size*grid_size*B)x(5+C)
+
 
     prediction = prediction[:,:,:2].assign(prediction[:,:,:2]+offset)
 
     
     anchors = tf.Variable(anchors)
     anchors = tf.expand_dims(tf.repeat(anchors, grid_size*grid_size, axis=0), 0)
-
+    # print(anchors)
 
     prediction = prediction[:,:,2:4].assign(tf.exp(prediction[:,:,2:4])*anchors)
     prediction = prediction[:,:, 5:].assign(tf.sigmoid(prediction[:,:,5:]))
     prediction = prediction[:,:,:4].assign(prediction[:,:,:4]*stride) # put the coordinate back to the size relatively to the image
+    
     return prediction
 
 def get_test_input(size):
