@@ -1,5 +1,15 @@
 # Datas
 yolov3/weights/*
 yolov3/results/*
-*/.DS_Store
-*/__pycache__/*
+
+# MacOS-generated directory metadata
+ios/.DS_Store
+yolov3/.DS_Store
+yolov3/proj_code/.DS_Store
+
+# Caches
+yolov3/proj_code/__pycache__/*
+
+# Developer-dependent
+ios/ObjectDetection.xcodeproj/project.pbxproj
+ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad/UserInterfaceState.xcuserstate

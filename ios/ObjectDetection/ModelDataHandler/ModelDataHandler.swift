@@ -40,6 +40,7 @@ class ModelDataHandler: NSObject {
   let threadCount: Int
   let threadCountLimit = 10
 
+  /// TODO: Configure the threshold
   let threshold: Float = 0.5
 
   // MARK: Model parameters
@@ -192,7 +193,6 @@ class ModelDataHandler: NSObject {
       let score = outputScores[i]
 
       // Filters results with confidence < threshold.
-      /// TODO: Configure the threshold
       guard score >= threshold else {
         continue
       }
