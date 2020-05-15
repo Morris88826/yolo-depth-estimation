@@ -70,7 +70,6 @@ def create_modules(blocks, data_format = "channels_last"):
             num_anchor_sets = len(anchors)//2
             anchors = [(anchors[i], anchors[i+1])for i in range(0, len(anchors), 2)]
             anchors = [anchors[idx] for idx in mask]
-
             boundingbox = BoundingBoxLayer(anchors)
             module.add(boundingbox)
 
