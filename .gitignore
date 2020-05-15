@@ -1,6 +1,7 @@
-# Datas
+# Datas and models
 yolov3/weights/*
 yolov3/results/*
+yolov3/models/*
 
 # MacOS-generated directory metadata
 **/.DS_Store

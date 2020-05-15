@@ -6,6 +6,11 @@ import os
 import numpy as np
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+# For eager execution. See https://github.com/tensorflow/tensorflow/issues/34944
+# This is to state whether it should be executed eagerly (default=True) explicitly
+# but this does not solve the problem 
+tf.config.experimental_run_functions_eagerly(True)
+
 class Darknet(tf.Module):
     def __init__(self, num_classes, cfgfile, classes_file, size=None, channels=3, classes=80, weight_file=""):
         super(Darknet, self).__init__()
@@ -27,7 +32,6 @@ class Darknet(tf.Module):
             self.load_weights(weight_file)
         
 
-    
     def __call__(self, x, CUDA=False):
         modules_info = self.blocks[1:]
         hidden_outputs = {}
