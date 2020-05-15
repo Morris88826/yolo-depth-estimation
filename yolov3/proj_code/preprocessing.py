@@ -38,3 +38,7 @@ def create_batches(im_batches, batch_size):
 
     return im_batches 
 
+def get_test_input(size):
+    img = cv2.imread("../images/test1.png")
+    img = preprocess_image(img, size)         #Resize to the input dimension
+    return img

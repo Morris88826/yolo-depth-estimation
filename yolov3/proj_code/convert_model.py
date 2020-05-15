@@ -1,35 +1,16 @@
 import argparse
-
 import tensorflow as tf
-from darknet_tf import Darknet
-from detector_tf import Detector
 from tensorflow import lite
 
 # Configurations
-saved_model_dir = "../models/detector-yolov3-tiny"
 
-cfgfile_dir = "../cfg/yolov3-tiny.cfg"
-weights_dir = "../weights/yolov3-tiny.weights"
-class_name_dir = "../data/coco.names"
-colors_dir = "../data/pallete.dms"
-batch_size = 2 # Modified
-resolution = 416
-num_classes = 80
-confidence = 0.35
-nms_thesh = 0.2
-
-def load_and_safe_model():
-    # Load the model
-    darknet = Darknet(num_classes, cfgfile_dir, class_name_dir, size=resolution, weight_file=weights_dir)
-    detector = Detector(darknet, batch_size=batch_size)
-    print("Network successfully loaded")
-
+def load_and_safe_model(model, saved_model_dir):
     # Export the entire model
     # Ref: https://www.tensorflow.org/api_docs/python/tf/saved_model/save#example_usage
-    tf.saved_model.save(detector, saved_model_dir)
+    tf.saved_model.save(model, saved_model_dir)
     print("Model saved")
 
-def convert_to_tflite():
+def convert_to_tflite(saved_model_dir):
     # Ref: https://www.tensorflow.org/api_docs/python/tf/lite/TFLiteConverter
     converter = lite.TFLiteConverter.from_saved_model(saved_model_dir)
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,

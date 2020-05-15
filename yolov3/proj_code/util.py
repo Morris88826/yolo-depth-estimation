@@ -1,10 +1,7 @@
 from __future__ import division
-from tensorflow import keras
-from preprocessing import *
 import tensorflow as tf
 import cv2
 import numpy as np
-
 
 def parse_cfg(cfgfile):
     file = open(cfgfile, 'r')
@@ -113,10 +110,6 @@ def non_maximum_suppression(outputs, nms_threshold):
     
     return bbox
 
-def get_test_input(size):
-    img = cv2.imread("../images/test1.png")
-    img = preprocess_image(img, size)         #Resize to the input dimension
-    return img
 
 def class_names(name_file):
     file = open(name_file, 'r')

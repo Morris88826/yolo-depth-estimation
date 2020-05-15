@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import time
 from tensorflow.keras.layers import (
     Concatenate,
     Conv2D,
@@ -11,8 +12,6 @@ from tensorflow.keras.layers import (
     ZeroPadding2D,
     BatchNormalization,
 )
-import time
-from layers import *
 from util import bbox_prediction, non_maximum_suppression
 
 class ConvolutionLayer(tf.keras.layers.Layer):

@@ -1,18 +1,20 @@
 from __future__ import division
 import time
 import numpy as np
-import cv2 
-from util import *
-import argparse
 import os 
+import cv2 
 import os.path as osp
 import pandas as pd
 import random
-# from gen_prediction import *
 import pickle as pkl
-from models import *
 from tensorflow import lite
+from util import *
+from models import *
 from preprocessing import *
+from convert_model import load_and_safe_model, convert_to_tflite
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 
 #Set up the neural network
 cfgfile_dir = "../cfg/yolov3-tiny.cfg"
@@ -44,3 +46,4 @@ print("Network successfully loaded")
 print(net.summary())
 
 ### Save model here
+saved_model_dir = "../models/detector-yolov3-tiny"
