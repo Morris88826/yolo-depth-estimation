@@ -43,6 +43,7 @@ def transform_output(output, im_dim_list, resolution):
 """
 class Detector(tf.Module):
     def __init__(self, model, batch_size=10):
+        super(Detector, self).__init__()
         self.model = model
         self.batch_size = batch_size
     

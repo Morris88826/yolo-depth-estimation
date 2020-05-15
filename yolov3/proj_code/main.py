@@ -23,8 +23,8 @@ colors_dir = "../data/pallete.dms"
 batch_size = 10
 resolution = 416
 num_classes = 80
-confidence = 0.35
-nms_thesh = 0.2
+confidence = 0.4
+nms_thesh = 0.5
 model = Darknet(num_classes, cfgfile_dir, class_name_dir, size=resolution, weight_file=weights_dir)
 print("Network successfully loaded")
 
@@ -46,7 +46,7 @@ im_batches = create_batches(im_batches, batch_size)
 
 # Create my detector
 my_detector = Detector(model, batch_size=batch_size)
-output = my_detector.predict(im_batches, confidence=confidence, nms_thesh=nms_thesh)
+output = my_detector(im_batches, confidence=confidence, nms_thesh=nms_thesh)
 
 # Transform output based on input image size
 # output shape = Nx6 (index 0 stores the picture id)
