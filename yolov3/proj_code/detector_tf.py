@@ -41,17 +41,16 @@ def transform_output(output, im_dim_list, resolution):
 """
     Only tf.Module can be converted
 """
-class Detector(tf.Module):
+class Detector():
     def __init__(self, model, batch_size=10):
         super(Detector, self).__init__()
         self.model = model
         self.batch_size = batch_size
     
-    def __call__(self, im_batches, confidence=0.35, nms_thesh=0.2, print_info=True):
+    def predict(self, im_batches, confidence=0.35, nms_thesh=0.2, print_info=True):
         """
             In runtime, call() will be called by tflite Interpreter for iOS
         """
-
         init = False
         start_det_loop = time.time()
         for i, batch in enumerate(im_batches):
