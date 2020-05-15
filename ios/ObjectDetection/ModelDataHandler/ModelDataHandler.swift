@@ -1,16 +1,4 @@
-// Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Modified from the TensorFlow Example
 
 import CoreImage
 import TensorFlowLite
@@ -25,6 +13,7 @@ struct Result {
 
 /// Stores one formatted inference.
 struct Inference {
+  /// TODO: Add distance (disparity map format?)
   let confidence: Float
   let className: String
   let rect: CGRect
@@ -34,8 +23,9 @@ struct Inference {
 /// Information about a model file or labels file.
 typealias FileInfo = (name: String, extension: String)
 
-/// Information about the MobileNet SSD model.
-enum MobileNetSSD {
+/// Information about the Yolo model.
+enum Yolo {
+  // TODO: Change the filename
   static let modelInfo: FileInfo = (name: "detect", extension: "tflite")
   static let labelsInfo: FileInfo = (name: "labelmap", extension: "txt")
 }
@@ -50,20 +40,24 @@ class ModelDataHandler: NSObject {
   let threadCount: Int
   let threadCountLimit = 10
 
+  /// TODO: Configure the threshold
   let threshold: Float = 0.5
 
   // MARK: Model parameters
-  let batchSize = 1
+  let batchSize = 2   /// We need a pair of photos each time
   let inputChannels = 3
-  let inputWidth = 300
-  let inputHeight = 300
+  let inputWidth = 416 /// The Width and Height of YOLO should better be a multiple of 32
+  let inputHeight = 416
 
   // MARK: Private properties
   private var labels: [String] = []
 
   /// TensorFlow Lite `Interpreter` object for performing inference on a given model.
+  /// It just does the "interpreting .TFLite" job and doesn't change the in/out format.
+  /// View it as an API for model.
   private var interpreter: Interpreter
 
+  /// The 4th channel is alpha, the mask for a transparent image. We do not need it.
   private let bgraPixel = (channels: 4, alphaComponent: 3, lastBgrComponent: 2)
   private let rgbPixelChannels = 3
   private let colorStrideValue = 10
@@ -138,10 +132,14 @@ class ModelDataHandler: NSObject {
     }
 
     let interval: TimeInterval
-    let outputBoundingBox: Tensor
-    let outputClasses: Tensor
+//    let outputBatchId: Tensor // TODO: Remove BatchId if it's not used
+    let outputBoundingBoxLeft: Tensor
+    let outputBoundingBoxTop: Tensor
+    let outputBoundingBoxRight: Tensor
+    let outputBoundingBoxBottom: Tensor
+    let outputConfidence: Tensor
     let outputScores: Tensor
-    let outputCount: Tensor
+    let outputClasses: Tensor
     do {
       let inputTensor = try interpreter.input(at: 0)
 
@@ -163,21 +161,31 @@ class ModelDataHandler: NSObject {
       try interpreter.invoke()
       interval = Date().timeIntervalSince(startDate) * 1000
 
-      outputBoundingBox = try interpreter.output(at: 0)
-      outputClasses = try interpreter.output(at: 1)
-      outputScores = try interpreter.output(at: 2)
-      outputCount = try interpreter.output(at: 3)
+//      outputBatchId = try interpreter.output(at: 0)
+      outputBoundingBoxLeft = try interpreter.output(at: 1)
+      outputBoundingBoxTop = try interpreter.output(at: 2)
+      outputBoundingBoxRight = try interpreter.output(at: 3)
+      outputBoundingBoxBottom = try interpreter.output(at: 4)
+      outputConfidence = try interpreter.output(at: 5)
+      outputScores = try interpreter.output(at: 6)
+      outputClasses = try interpreter.output(at: 7)
     } catch let error {
       print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
       return nil
     }
+    
+    // Make the results compatible to resultArray
+    
 
     // Formats the results
     let resultArray = formatResults(
-      boundingBox: [Float](unsafeData: outputBoundingBox.data) ?? [],
-      outputClasses: [Float](unsafeData: outputClasses.data) ?? [],
+      boundingBoxLeft: [Int](unsafeData: outputBoundingBoxLeft.data) ?? [],
+      boundingBoxTop: [Int](unsafeData: outputBoundingBoxTop.data) ?? [],
+      boundingBoxRight: [Int](unsafeData: outputBoundingBoxRight.data) ?? [],
+      boundingBoxBottom: [Int](unsafeData: outputBoundingBoxBottom.data) ?? [],
+      outputConfidence: [Float](unsafeData: outputConfidence.data) ?? [],
       outputScores: [Float](unsafeData: outputScores.data) ?? [],
-      outputCount: Int(([Float](unsafeData: outputCount.data) ?? [0])[0]),
+      outputClasses: [Int](unsafeData: outputClasses.data) ?? [],
       width: CGFloat(imageWidth),
       height: CGFloat(imageHeight)
     )
@@ -189,14 +197,16 @@ class ModelDataHandler: NSObject {
 
   /// Filters out all the results with confidence score < threshold and returns the top N results
   /// sorted in descending order.
-  func formatResults(boundingBox: [Float], outputClasses: [Float], outputScores: [Float], outputCount: Int, width: CGFloat, height: CGFloat) -> [Inference]{
+  func formatResults(boundingBoxLeft: [Int], boundingBoxTop: [Int], boundingBoxRight: [Int], boundingBoxBottom: [Int],
+                     outputConfidence: [Float], outputScores: [Float], outputClasses: [Int],
+                     width: CGFloat, height: CGFloat) -> [Inference]{
     var resultsArray: [Inference] = []
-    if (outputCount == 0) {
+    if (outputClasses.count == 0) {
       return resultsArray
     }
-    for i in 0...outputCount - 1 {
+    for i in 0...outputClasses.count - 1 {
 
-      let score = outputScores[i]
+      let score = outputConfidence[i] * outputScores[i] /// TODO: Check if this should be confidence, score, or both like this
 
       // Filters results with confidence < threshold.
       guard score >= threshold else {
@@ -210,10 +220,10 @@ class ModelDataHandler: NSObject {
       var rect: CGRect = CGRect.zero
 
       // Translates the detected bounding box to CGRect.
-      rect.origin.y = CGFloat(boundingBox[4*i])
-      rect.origin.x = CGFloat(boundingBox[4*i+1])
-      rect.size.height = CGFloat(boundingBox[4*i+2]) - rect.origin.y
-      rect.size.width = CGFloat(boundingBox[4*i+3]) - rect.origin.x
+      rect.origin.y = CGFloat(boundingBoxTop[i])
+      rect.origin.x = CGFloat(boundingBoxLeft[i])
+      rect.size.height = CGFloat(boundingBoxBottom[i]) - rect.origin.y
+      rect.size.width = CGFloat(boundingBoxRight[i]) - rect.origin.x
 
       // The detected corners are for model dimensions. So we scale the rect with respect to the
       // actual image dimensions.

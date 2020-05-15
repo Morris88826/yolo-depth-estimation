@@ -13,6 +13,11 @@ import random
 from gen_prediction import *
 import pickle as pkl
 
+# For eager execution. See https://github.com/tensorflow/tensorflow/issues/34944
+# This is to state whether it should be executed eagerly (default=True) explicitly
+# but this does not solve the problem 
+tf.config.experimental_run_functions_eagerly(True)
+
 def transform_output(output, im_dim_list, resolution):
     inp_dim = resolution
     im_dim_list = np.take(im_dim_list, output[:,0].astype(np.long), axis=0)
@@ -33,13 +38,19 @@ def transform_output(output, im_dim_list, resolution):
 
     return new_output.astype(int)
 
+"""
+    Only tf.Module can be converted
+"""
 class Detector(tf.Module):
     def __init__(self, model, batch_size=10):
         super(Detector, self).__init__()
         self.model = model
         self.batch_size = batch_size
     
-    def predict(self, im_batches, confidence=0.3, nms_thesh=0.4, print_info=True):
+    def __call__(self, im_batches, confidence=0.35, nms_thesh=0.2, print_info=True):
+        """
+            In runtime, call() will be called by tflite Interpreter for iOS
+        """
 
         init = False
         start_det_loop = time.time()

@@ -46,7 +46,7 @@ im_batches = create_batches(im_batches, batch_size)
 
 # Create my detector
 my_detector = Detector(model, batch_size=batch_size)
-output = my_detector.predict(im_batches, confidence=confidence, nms_thesh=nms_thesh)
+output = my_detector(im_batches, confidence=confidence, nms_thesh=nms_thesh)
 
 # Transform output based on input image size
 # output shape = Nx6 (index 0 stores the picture id)
