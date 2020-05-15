@@ -33,12 +33,13 @@ def transform_output(output, im_dim_list, resolution):
 
     return new_output.astype(int)
 
-class Detector():
+class Detector(tf.Module):
     def __init__(self, model, batch_size=10):
+        super(Detector, self).__init__()
         self.model = model
         self.batch_size = batch_size
     
-    def predict(self, im_batches, confidence=0.35, nms_thesh=0.2, print_info=True):
+    def predict(self, im_batches, confidence=0.3, nms_thesh=0.4, print_info=True):
 
         init = False
         start_det_loop = time.time()

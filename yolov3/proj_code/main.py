@@ -23,8 +23,8 @@ colors_dir = "../data/pallete.dms"
 batch_size = 10
 resolution = 416
 num_classes = 80
-confidence = 0.35
-nms_thesh = 0.2
+confidence = 0.4
+nms_thesh = 0.5
 model = Darknet(num_classes, cfgfile_dir, class_name_dir, size=resolution, weight_file=weights_dir)
 print("Network successfully loaded")
 

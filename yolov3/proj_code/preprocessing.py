@@ -20,8 +20,7 @@ def preprocess_image(img, reshape_size):
     model_image_size = (reshape_size, reshape_size)
     boxed_image = letterbox_image(img, tuple(reversed(model_image_size)))
     image_data = np.array(boxed_image, dtype='float32')
-    image_data /= 255.
-    # image_data = np.transpose(image_data, [2, 0, 1])
+    image_data /= 255
     image_data = np.expand_dims(image_data, 0)
     image_data = tf.Variable(image_data)
     return image_data
