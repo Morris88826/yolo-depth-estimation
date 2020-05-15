@@ -32,8 +32,11 @@ def load_and_safe_model():
 def convert_to_tflite():
     # Ref: https://www.tensorflow.org/api_docs/python/tf/lite/TFLiteConverter
     converter = lite.TFLiteConverter.from_saved_model(saved_model_dir)
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
+                                        tf.lite.OpsSet.SELECT_TF_OPS]
     tflite_model = converter.convert()
     open(saved_model_dir+".lite", "wb").write(tflite_model)
+    print("Model converted")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')

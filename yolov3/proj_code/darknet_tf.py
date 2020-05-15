@@ -1,6 +1,6 @@
 import tensorflow as tf
 from util import *
-from module import *
+from layers import *
 from gen_prediction import get_prediction
 import os 
 import numpy as np
@@ -9,15 +9,18 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # For eager execution. See https://github.com/tensorflow/tensorflow/issues/34944
 # This is to state whether it should be executed eagerly (default=True) explicitly
 # but this does not solve the problem 
-tf.config.experimental_run_functions_eagerly(True)
+# tf.config.experimental_run_functions_eagerly(True)
 
-class Darknet(tf.Module):
+class Darknet(tf.keras.Model):
     def __init__(self, num_classes, cfgfile, classes_file, size=None, channels=3, classes=80, weight_file=""):
         super(Darknet, self).__init__()
         self.blocks = parse_cfg(cfgfile)
         self.classes = class_names(classes_file)
         self.weight_file = weight_file
-        self.net_info, self.module_list = create_modules(self.blocks)
+        
+        self.net_info, self.m_layers = create_layers(self.blocks)
+        
+        self.net_info = self.blocks[0]
         self.net_info["height"] = size
         self.num_classes = num_classes
 
@@ -25,64 +28,75 @@ class Darknet(tf.Module):
         assert inp_dim % 32 == 0 
         assert inp_dim > 32
         
-        x = inputs = tf.keras.Input([size, size, channels], name='input')
-        self.__call__(x)
+        self.build_network(tf.zeros((1,size, size, channels)))
 
         if self.weight_file != "":
             self.load_weights(weight_file)
         
+    
+    def build_network(self, x):
+        self.call(x)
 
-    def __call__(self, x, CUDA=False):
-        modules_info = self.blocks[1:]
-        hidden_outputs = {}
+    def call(self, x):
+        blocks_info = self.blocks[1:]
+        self.hidden_outputs = {}
         detections = None
         init = False
-        for idx, module_info in enumerate(modules_info):
-            type = module_info["type"]
+
+        for idx, block_info in enumerate(blocks_info):
+
+            type = block_info["type"]
+
             if type == "convolutional" or type == "upsample" or type == "maxpool":
-                output = self.module_list[idx](x)
+                x = self.m_layers[idx](x)
 
-            elif type == "route":
-                layers = module_info["layers"].split(',')
-                layers = [int(l) for l in layers]
-                start = layers[0]
-
-                if len(layers) == 1:
-                    output = hidden_outputs[idx + start]
-                else:
-                    end = layers[1]
-                    if end > 0:
-                        end = end - idx
-                    hidden_output_1 = hidden_outputs[idx + start]
-                    hidden_output_2 = hidden_outputs[idx + end]
-                    output = tf.concat((hidden_output_1,hidden_output_2), axis=3)
+            elif type == "route": 
+                layers_idx = block_info["layers"].split(',')
+                layers_idx = [int(l) for l in layers_idx]
+                if len(layers_idx) == 1:
+                    layers_idx.append(0)
+                x = self.route_layers(idx, layers_idx[0], layers_idx[1])
                 
             elif type == "shortcut":
-                start = int(module_info["from"])
-                hidden_output_1 = hidden_outputs[idx + start]
-                hidden_output_2 = hidden_outputs[idx - 1]
-                output = hidden_output_1 + hidden_output_2
+                start = int(block_info["from"])
+                hidden_output_1 = self.hidden_outputs[idx + start]
+                hidden_output_2 = self.hidden_outputs[idx - 1]
+                x = hidden_output_1 + hidden_output_2
 
             elif type == "yolo":
-                anchors = self.module_list[idx].get_layer(index=0).anchors
-                num_classes = int(module_info["classes"])
-                
-                x = predict_bounding_box(x, int(self.net_info["height"]), anchors, num_classes, CUDA)
+                x = self.m_layers[idx](x)
 
-                if x is None:
+                if x is None: # if in build weight stage
                     continue
 
                 if not init:
-
                     detections = tf.Variable(x)
                     init = True
                 else:  
                     detections = tf.concat((detections, x), 1)
 
-            x = output
-            hidden_outputs[idx] = x
+            self.hidden_outputs[idx] = x
 
         return detections
+    
+    def route_layers(self, current_idx, layer1, layer2=0):
+        '''
+        layer1, layer2 represent the layer number
+
+        Two kinds of representation: (negative, positive) or (negative, negative)
+
+        '''
+        layer1 = current_idx + layer1
+        if layer2 == 0:
+            output = self.hidden_outputs[layer1]
+        else:
+            if layer2 < 0:
+                layer2 = current_idx + layer2
+            hidden_output_1 = self.hidden_outputs[layer1]
+            hidden_output_2 = self.hidden_outputs[layer2]
+            output = tf.concat((hidden_output_1,hidden_output_2), axis=3)
+        
+        return output
     
     def load_weights(self, weight_file):
         fd = open(weight_file, 'rb')
@@ -98,35 +112,35 @@ class Darknet(tf.Module):
 
             # load weights for convolutional
             if type == "convolutional":
-                _model = self.module_list[idx]
-                for i , layer in enumerate(_model.layers):
-                    if layer.name != "Conv2d":
-                        continue
+                layer = self.m_layers[idx]
+                
+                num_filters = layer.filters
+                kernel_size = layer.kernel_size
+                
+                if layer.require_batchnorm: # with batch norm
+                    bn_weights = weights[cur:cur+4*num_filters]
+                    cur += 4*num_filters
+                    bn_weights = bn_weights.reshape((4, num_filters))[[1, 0, 2, 3]] 
 
-                    batch_norm_layer = None
-                    if (i+1) < len(_model.layers) and _model.layers[i+1].name == "BatchNorm2d":
-                        batch_norm_layer = _model.layers[i+1]
+                else:
+                    conv_bias = weights[cur:cur+num_filters]
+                    cur += num_filters
 
-                    filters = layer.filters
-                    size = layer.kernel_size[0]
-                    in_dim = layer.input_shape[-1]
+                in_dim = layer.in_shape
 
-                    if batch_norm_layer == None:
-                        conv_bias = weights[cur:cur+filters]
-                        cur += filters
-                    else:
-                        bn_weights = weights[cur:cur+4*filters]
-                        cur += 4*filters
-                        bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]] 
+                conv_shape = (num_filters, in_dim, kernel_size, kernel_size)
+                conv_weights = weights[cur:cur+np.product(conv_shape)]
+                cur += np.product(conv_shape)
+                conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
 
-                    conv_shape = (filters, in_dim, size, size)
-                    conv_weights = weights[cur:cur+np.product(conv_shape)]
-                    cur += np.product(conv_shape)
-                    conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
+                if layer.require_batchnorm:
+                    weight_list = [conv_weights]
+                    for i in bn_weights:
+                        weight_list.append(i)
+                    layer.set_weights(weight_list)
+                else:
+                    layer.set_weights([conv_weights, conv_bias])
 
-                    if batch_norm_layer == None:
-                        layer.set_weights([conv_weights, conv_bias])
-                    else:
-                        layer.set_weights([conv_weights])
-                        batch_norm_layer.set_weights(bn_weights)
+
+
                 
