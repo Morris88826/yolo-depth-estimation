@@ -45,7 +45,7 @@ class ViewController: UIViewController {
   // MARK: Controllers that manage functionality
   private lazy var cameraFeedManager = CameraFeedManager(previewView: previewView)
   private var modelDataHandler: ModelDataHandler? =
-    ModelDataHandler(modelFileInfo: MobileNetSSD.modelInfo, labelsFileInfo: MobileNetSSD.labelsInfo)
+    ModelDataHandler(modelFileInfo: Yolo.modelInfo, labelsFileInfo: Yolo.labelsInfo)
   private var inferenceViewController: InferenceViewController?
 
   // MARK: View Handling Methods
@@ -139,8 +139,8 @@ extension ViewController: InferenceViewControllerDelegate {
   func didChangeThreadCount(to count: Int) {
     if modelDataHandler?.threadCount == count { return }
     modelDataHandler = ModelDataHandler(
-      modelFileInfo: MobileNetSSD.modelInfo,
-      labelsFileInfo: MobileNetSSD.labelsInfo,
+      modelFileInfo: Yolo.modelInfo,
+      labelsFileInfo: Yolo.labelsInfo,
       threadCount: count
     )
   }
