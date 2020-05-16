@@ -51,12 +51,12 @@ classes = class_names(class_name_dir)
 batches_predictions = []
 for batch in im_batches:
     prediction = net(tf.Variable(batch))
-    prediction = transform_output(prediction, im_dim_list, resolution)
-    batches_predictions.append(prediction)
+#     prediction = transform_output(prediction, im_dim_list, resolution)
+#     batches_predictions.append(prediction)
 
-draw_boxes(batches_predictions, loaded_ims, colors, classes, batch_size=batch_size)
+# draw_boxes(batches_predictions, loaded_ims, colors, classes, batch_size=batch_size)
 
-save_drawed_images(imlist, output_dir, loaded_ims)
+# save_drawed_images(imlist, output_dir, loaded_ims)
 
 ### Save model here
 saved_model_dir = "../models/detector-yolov3-tiny"

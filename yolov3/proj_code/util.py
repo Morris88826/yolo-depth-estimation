@@ -29,28 +29,48 @@ def parse_cfg(cfgfile):
 
     return blocks
 
-def bbox_prediction(prediction, anchors, classes):
+def bbox_prediction(prediction, anchors, classes, img_size):
+    num_anchors = len(anchors)
+    shape = prediction.get_shape().as_list()
     grid_size = prediction.shape[1]
-    box_xy, box_wh, objectness, class_probs = tf.split(prediction, (2, 2, 1, classes), axis=-1)
+    dim = grid_size ** 2
+    bbox_attrs = 5 + classes
 
-    box_xy = tf.sigmoid(box_xy)
-    objectness = tf.sigmoid(objectness)
-    class_probs = tf.sigmoid(class_probs)
-    pred_box = tf.concat((box_xy, box_wh), axis=-1)  #[N,H,W,4]
+    prediction = tf.reshape(prediction, [-1, num_anchors * dim, bbox_attrs])
 
-    grid = tf.meshgrid(tf.range(grid_size), tf.range(grid_size))
+    stride = img_size//grid_size
 
-    grid = tf.expand_dims(tf.stack(grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
+    anchors = [(a[0]/stride, a[1]/stride) for a in anchors]
 
-    box_xy = (box_xy + tf.cast(grid, tf.float32)) / tf.cast(grid_size, tf.float32)
-    box_wh = tf.exp(box_wh) * anchors
+    box_centers, box_sizes, confidence, classes = tf.split(prediction, [2, 2, 1, classes], axis=-1)
 
-    box_x1y1 = box_xy - box_wh / 2 # top left
-    box_x2y2 = box_xy + box_wh / 2 # bottom right
+    box_centers = tf.nn.sigmoid(box_centers)
+    confidence = tf.nn.sigmoid(confidence)
 
-    bbox = tf.concat([box_x1y1, box_x2y2], axis=-1)
+    grid_x = tf.range(grid_size, dtype=tf.float32)
+    a, b = tf.meshgrid(grid_x, grid_x)
 
-    return bbox, objectness, class_probs, pred_box
+    x_offset = tf.reshape(a, (-1, 1))
+    y_offset = tf.reshape(b, (-1, 1))
+
+    x_y_offset = tf.concat([x_offset, y_offset], axis=-1)
+    x_y_offset = tf.reshape(tf.tile(x_y_offset, [1, num_anchors]), [1, -1, 2])
+
+    box_centers = box_centers + x_y_offset
+    box_centers = box_centers * stride
+
+    anchors = tf.cast(tf.tile(anchors, [dim, 1]), dtype=tf.float32)
+
+    box_sizes = tf.exp(box_sizes) * anchors
+    box_sizes = box_sizes * stride
+
+    detections = tf.concat([box_centers, box_sizes, confidence], axis=-1)
+
+    classes = tf.nn.sigmoid(classes)
+    prediction = tf.concat([detections, classes], axis=-1)
+    
+    return prediction
+
 
 def non_maximum_suppression(outputs, score_threshold, iou_threshold):
     b = []
