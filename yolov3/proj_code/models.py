@@ -141,13 +141,11 @@ class Yolov3_Tiny(tf.keras.Model):
 
         x1 = self.conv_8(x1)
         x1 = self.conv_9(x1)
-        anchors1 = np.array([[81, 82], [135, 169],  [344, 319]])/416
-        output1 = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, x.shape[1], x.shape[2],
-                                    len(anchors1), self.classes+5)))(x1)
+        anchors1 = np.array([[81, 82], [135, 169],  [344, 319]])
 
         # bbox1 contains (bbox, objectness, class_probs, pred_box)
-        box1 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, anchors1, self.classes),
-                     name='yolo_boxes_0')(output1)
+        box1 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, anchors1, self.classes, self.resolution),
+                     name='yolo_boxes_0')(x1)
 
         x2 = self.conv_10(x2)
         x2 = self.upsample(x2)
@@ -155,18 +153,18 @@ class Yolov3_Tiny(tf.keras.Model):
         x2 = self.conv_11(x2)
         x2 = self.conv_12(x2)
 
-        anchors2 = np.array([[10, 14], [23, 27], [37, 58]])/416
-        output2 = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, x.shape[1], x.shape[2],
-                                    len(anchors2), self.classes+5)))(x2)
-        box2 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, anchors2, self.classes),
-                     name='yolo_boxes_1')(output2)
+        anchors2 = np.array([[10, 14], [23, 27], [37, 58]])
+        box2 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, anchors2, self.classes, self.resolution),
+                     name='yolo_boxes_1')(x2)
         
         score_threshold = 0.5
         iou_threshold = 0.5
 
-        if x.shape[0] is None:
-            return (box1, box2)
+        # if x.shape[0] is None:
+        #     return (box1, box2)
+
+        outputs = tf.concat([box1, box2], axis=1)
         
-        outputs = tf.keras.layers.Lambda(lambda x:non_maximum_suppression(x, score_threshold, iou_threshold), name="nms")([box1, box2])
+        # outputs = tf.keras.layers.Lambda(lambda x:non_maximum_suppression(x, score_threshold, iou_threshold), name="nms")([box1, box2])
 
         return outputs
