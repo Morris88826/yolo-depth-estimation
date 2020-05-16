@@ -9,7 +9,7 @@ from tensorflow import lite
 from util import *
 from models import *
 from preprocessing import *
-from convert_model import load_and_safe_model, convert_to_tflite
+from convert_model import *
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -60,5 +60,6 @@ save_drawed_images(imlist, output_dir, loaded_ims)
 
 ### Save model here
 saved_model_dir = "../models/detector-yolov3-tiny"
-load_and_safe_model(net, saved_model_dir)
-convert_to_tflite(saved_model_dir)
+# load_and_safe_model(net, saved_model_dir)
+# convert_to_tflite(saved_model_dir)
+keras_converter(net, saved_model_dir)
