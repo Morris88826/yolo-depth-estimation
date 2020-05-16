@@ -25,14 +25,15 @@ class ConvolutionLayer(tf.keras.layers.Layer):
         if strides == 1:
             self.padding = "SAME"
 
-        self.ZeroPadding2D = tf.keras.layers.ZeroPadding2D(((1, 0), (1, 0)))
-        self.conv = tf.keras.layers.Conv2D(filters=self.filters, kernel_size=self.kernel_size, strides=self.strides, padding=self.padding, use_bias=not self.batch_norm, name="Conv2D")
+
+        self.conv = tf.keras.layers.Conv2D(filters=self.filters, kernel_size=self.kernel_size, strides=self.strides, padding=self.padding, use_bias=not self.batch_norm, name="conv")
         if self.batch_norm:
-            self.batch_norm = tf.keras.layers.BatchNormalization(name="BatchNorm2D")
+            self.batch_norm = tf.keras.layers.BatchNormalization(name="batchnorm")
+        
+        self.in_shape = None
 
     def call(self, x):
-        if self.strides != 1:
-            x = self.ZeroPadding2D(x)  # top left half-padding
+        self.in_shape = x.shape[-1]
 
         x = self.conv(x)
         
@@ -45,11 +46,11 @@ class ConvolutionLayer(tf.keras.layers.Layer):
 
 
 class Yolov3_Tiny(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, resolution=416):
         super(Yolov3_Tiny, self).__init__()
-
+        self.resolution = resolution
         # input = tf.keras.layers.Input([416, 416, 3])
-        input = tf.zeros((1,416,416,3))
+        input = tf.zeros((1,resolution,resolution,3))
         self.conv_0 = ConvolutionLayer(filters=16, kernel_size=3, strides=1, batch_norm=1)
         self.maxpool_0 = tf.keras.layers.MaxPool2D(pool_size=2, strides=2, padding="SAME", name="MaxPool2D")
         self.conv_1 = ConvolutionLayer(filters=32, kernel_size=3, strides=1, batch_norm=1)
@@ -80,6 +81,47 @@ class Yolov3_Tiny(tf.keras.Model):
         start = time.time()
         self(input)
         print("Finish build in {}".format(time.time()-start))
+    
+    def load_weights(self, weight_file):
+        fd = open(weight_file, 'rb')
+        header = np.fromfile(fd, dtype = np.int32, count = 5)
+        self.header = tf.constant(header)
+        self.seen = self.header[3]
+
+        weights = np.fromfile(fd, dtype = np.float32)
+
+        cur = 0
+        for layer in self.layers:
+            if layer.name == "Conv2D":
+                filters = layer.filters
+                kernel_size = layer.kernel_size
+                batch_norm = layer.batch_norm
+                if batch_norm:
+                    bn_weights = weights[cur:cur+4*filters] # [beta, gamma, moving_mean, moving_var]
+                    cur += 4*filters
+                    bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]] 
+                
+                else:
+                    conv_bias = weights[cur:cur+filters]
+                    cur += filters
+
+                in_dim = layer.in_shape
+
+                conv_shape = (filters, in_dim, kernel_size, kernel_size)
+                conv_weights = weights[cur:cur+np.product(conv_shape)]
+                cur += np.product(conv_shape)
+                conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
+
+                if batch_norm:
+                    weight_list = [conv_weights]
+                    for i in bn_weights:
+                        weight_list.append(i)
+                    layer.set_weights(weight_list)
+                else:
+                    layer.set_weights([conv_weights, conv_bias])
+                
+        return cur
+
 
     def call(self, x):
         x = input = self.conv_0(x)
@@ -99,7 +141,7 @@ class Yolov3_Tiny(tf.keras.Model):
 
         x1 = self.conv_8(x1)
         x1 = self.conv_9(x1)
-        anchors1 = np.array([[81, 82], [135, 169],  [344, 319]])
+        anchors1 = np.array([[81, 82], [135, 169],  [344, 319]])/416
         output1 = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, x.shape[1], x.shape[2],
                                     len(anchors1), self.classes+5)))(x1)
 
@@ -112,14 +154,19 @@ class Yolov3_Tiny(tf.keras.Model):
         x2 = self.concat([x2, x_8])
         x2 = self.conv_11(x2)
         x2 = self.conv_12(x2)
-        anchors2 = np.array([[10, 14], [23, 27], [37, 58]])
+
+        anchors2 = np.array([[10, 14], [23, 27], [37, 58]])/416
         output2 = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, x.shape[1], x.shape[2],
                                     len(anchors2), self.classes+5)))(x2)
         box2 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, anchors2, self.classes),
                      name='yolo_boxes_1')(output2)
         
-        nms_threshold = 0.5
-        outputs = tf.keras.layers.Lambda(lambda x:non_maximum_suppression(x, nms_threshold), name="nms")([box1, box2])
+        score_threshold = 0.5
+        iou_threshold = 0.5
 
+        if x.shape[0] is None:
+            return (box1, box2)
+        
+        outputs = tf.keras.layers.Lambda(lambda x:non_maximum_suppression(x, score_threshold, iou_threshold), name="nms")([box1, box2])
 
-        return box1, box2
+        return outputs
