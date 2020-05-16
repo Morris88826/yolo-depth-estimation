@@ -47,3 +47,4 @@ print(net.summary())
 
 ### Save model here
 saved_model_dir = "../models/detector-yolov3-tiny"
+load_and_safe_model(net, saved_model_dir)
