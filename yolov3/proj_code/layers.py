@@ -53,7 +53,7 @@ def YoloConv(filters, batch_size = None, name=None):
             x = tf.keras.layers.Concatenate()([x, x_skip])
             print(x.shape)
         else:
-            x = inputs = tf.keras.layers.Input(x_in.shape[1:])
+            x = inputs = tf.keras.layers.Input(x_in.shape[1:], batch_size=batch_size)
             x = Conv2D_Block(x, filters, 1)
 
         return tf.keras.Model(inputs, x, name=name)(x_in)
@@ -90,11 +90,11 @@ def YoloV3_Tiny(input_shape=None, channels=3, anchors=yolo_tiny_anchors,
     boxes_1 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, np.array([(10, 14), (23, 27), (37, 58)]), classes, resolution),
                      name='yolo_boxes_1')(output_1)
     
-    outputs = tf.concat([boxes_0, boxes_1], axis=1)
+    outputs = tf.keras.layers.Concatenate(axis=1)([boxes_0, boxes_1])
     # print(outputs.shape)
     # outputs = tf.keras.layers.Lambda(lambda x: non_maximum_suppression(x, score_threshold, iou_threshold),
     #                  name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
-    return tf.keras.Model(inputs, boxes_0, name='yolov3_tiny')
+    return tf.keras.Model(inputs, outputs, name='yolov3_tiny')
 
 
 def testing(input_shape=None, channels=3, anchors=yolo_tiny_anchors,
