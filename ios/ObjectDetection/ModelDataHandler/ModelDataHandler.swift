@@ -25,7 +25,7 @@ typealias FileInfo = (name: String, extension: String)
 
 /// Information about the Yolo model.
 enum Yolo {
-  static let modelInfo: FileInfo = (name: "yolov3-tiny.h5", extension: "tflite")
+  static let modelInfo: FileInfo = (name: "yolov3-tiny", extension: "tflite")
   static let labelsInfo: FileInfo = (name: "labelmap", extension: "txt")
 }
 
@@ -40,8 +40,8 @@ class ModelDataHandler: NSObject {
   let threadCountLimit = 10
 
   /// TODO: Configure the threshold
-  let threshold: Float = 0.5
-  let maxBoxes: Int = 5
+  let confidenceThresh: Float = 0.2
+  let nmsThresh: Float = 0.4
 
   // MARK: Model parameters
   let batchSize = 1 /// We need a pair of photos each time # TODO: Change it back to 2
@@ -132,15 +132,7 @@ class ModelDataHandler: NSObject {
     }
 
     let interval: TimeInterval
-    let boxes_0: Tensor
-//    let outputBatchId: Tensor // TODO: Remove BatchId if it's not used
-//    let outputBoundingBoxLeft: Tensor
-//    let outputBoundingBoxTop: Tensor
-//    let outputBoundingBoxRight: Tensor
-//    let outputBoundingBoxBottom: Tensor
-//    let outputConfidence: Tensor
-//    let outputScores: Tensor
-//    let outputClasses: Tensor
+    let outputs: Tensor
     do {
       let inputTensor = try interpreter.input(at: 0)
 
@@ -161,54 +153,88 @@ class ModelDataHandler: NSObject {
       let startDate = Date()
       try interpreter.invoke()
       interval = Date().timeIntervalSince(startDate) * 1000
+      //print(interval)
 
       
-      boxes_0 = try interpreter.output(at: 0) /// [1, 3*13*13, 4+1+80] = [1, 507, 85]
-//      outputBoundingBoxLeft = try interpreter.output(at: 1)
-//      outputBoundingBoxTop = try interpreter.output(at: 2)
-//      outputBoundingBoxRight = try interpreter.output(at: 3)
-//      outputBoundingBoxBottom = try interpreter.output(at: 4)
-//      outputConfidence = try interpreter.output(at: 5)
-//      outputScores = try interpreter.output(at: 6)
-//      outputClasses = try interpreter.output(at: 7)
+      outputs = try interpreter.output(at: 0) /// [1, (13*13+26*26)*3, 4+1+80]
     } catch let error {
       print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
       return nil
     }
     
     // Pick the top boxes with NMS
-    let a = boxes_0.data /// `Data` type: (only) 1-d array
+    let a = [Float](unsafeData: outputs.data) ?? []
+    //print(a.count) /// 215475 == 1 x (13*13+26*26)*3 x (4+1+80)
+    //print(a[1...10])
     var bboxes: [BoundingBox] = []
-    let dim2Width = boxes_0.shape.dimensions[2] /// normally c + 4 + 1 = 85
     
-    
-    for cx in 0...12 {
-      for cy in 0...12 {
-        for b in 0...2 {
-          let d1 = ((cx * 13 + cy) * 3 + b) * dim2Width
+    var d1 = 0
+    for _ in 0...12 {
+      for _ in 0...12 {
+        for _ in 0...2 {
           
-          var rect: CGRect = CGRect.zero
+          var rect = CGRect.zero
           rect.origin.x = CGFloat(a[d1+0])
           rect.origin.y = CGFloat(a[d1+1])
           rect.size.width = CGFloat(a[d1+2])
           rect.size.height = CGFloat(a[d1+3])
-//          print(rect)
           
-          let objectness: Float = Float(a[d1+4]) / 100.0
-          for c in 0...79 {
-//            bboxes.append(BoundingBox(classIndex: c, score: objectness * Float(a[d1+5+c]), rect: rect))
-            bboxes.append(BoundingBox(classIndex: c, score: objectness * Float(a[d1+5+c]) / 100.0, rect: rect))
+          let objectness = Float(a[d1+4])
+          if objectness > confidenceThresh {
+            var maxClass: Int = -1
+            var maxClassScore: Float = 0.0
+            for c in 0...79 {
+              let classScore = Float(a[d1+5+c])
+              if classScore  > maxClassScore {
+                maxClass = c
+                maxClassScore = classScore
+              }
+            }
+            if maxClass > -1 {
+              bboxes.append(BoundingBox(classIndex: maxClass, confidence: maxClassScore, rect: rect))
+            }
           }
+          d1 += 85
+          
         }
       }
     }
-    let selectedIdx: [Int] = nonMaxSuppression(
-      boundingBoxes: bboxes, iouThreshold: threshold, maxBoxes: maxBoxes)
+    for _ in 0...25 {
+      for _ in 0...25 {
+        for _ in 0...2 {
+          
+          var rect = CGRect.zero
+          rect.origin.x = CGFloat(a[d1+0])
+          rect.origin.y = CGFloat(a[d1+1])
+          rect.size.width = CGFloat(a[d1+2])
+          rect.size.height = CGFloat(a[d1+3])
+          
+          let objectness = Float(a[d1+4])
+          if objectness > confidenceThresh {
+            var maxClass: Int = -1
+            var maxClassScore: Float = 0.0
+            for c in 0...79 {
+              let classScore = Float(a[d1+5+c])
+              if classScore  > maxClassScore {
+                maxClass = c
+                maxClassScore = classScore
+              }
+            }
+            if maxClass > -1 {
+              bboxes.append(BoundingBox(classIndex: maxClass, confidence: maxClassScore, rect: rect))
+            }
+          }
+          d1 += 85
+        }
+      }
+    }
+    bboxes = nonMaxSuppression(
+      boundingBoxes: bboxes, num_classes: 80, confidence: confidenceThresh, nms_threshold: nmsThresh)
+      
     
     // Formats the results
     let resultArray = formatResults(
       boundingBoxes: bboxes,
-      selectedIndexes: selectedIdx,
       width: CGFloat(imageWidth),
       height: CGFloat(imageHeight)
     )
@@ -220,7 +246,7 @@ class ModelDataHandler: NSObject {
 
   /// Filters out all the results with confidence score < threshold and returns the top N results
   /// sorted in descending order.
-  func formatResults(boundingBoxes: [BoundingBox], selectedIndexes: [Int],
+  func formatResults(boundingBoxes: [BoundingBox],
                      width: CGFloat, height: CGFloat) -> [Inference]{
     var resultsArray: [Inference] = []
     if (boundingBoxes.count == 0) {
@@ -228,10 +254,10 @@ class ModelDataHandler: NSObject {
     }
     for i in 0...boundingBoxes.count - 1 {
 
-      let score = boundingBoxes[i].score
+      let score = boundingBoxes[i].confidence
 
       // Filters results with confidence < threshold.
-      guard score >= threshold else {
+      guard score >= confidenceThresh else {
         continue
       }
 
