@@ -14,7 +14,7 @@ from tensorflow.keras.layers import (
 )
 from util import bbox_prediction, non_maximum_suppression
 
-class ConvolutionLayer(tf.keras.layers.Layer):
+def ConvolutionLayer(tf.keras.layers.Layer):
     def __init__(self, filters, kernel_size, strides=1, batch_norm=True):
         super(ConvolutionLayer, self).__init__(name="Conv2D")
         self.filters = filters
@@ -25,7 +25,7 @@ class ConvolutionLayer(tf.keras.layers.Layer):
         if strides == 1:
             self.padding = "SAME"
 
-
+        
         self.conv = tf.keras.layers.Conv2D(filters=self.filters, kernel_size=self.kernel_size, strides=self.strides, padding=self.padding, use_bias=not self.batch_norm, name="conv")
         if self.batch_norm:
             self.batch_norm = tf.keras.layers.BatchNormalization(name="batchnorm")

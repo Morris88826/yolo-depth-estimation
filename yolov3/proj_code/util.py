@@ -29,20 +29,42 @@ def parse_cfg(cfgfile):
 
     return blocks
 
-def bbox_prediction(prediction, anchors, classes, img_size):
+def bbox_prediction_v2(prediction, anchors, classes):
+    # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
+    grid_size = tf.shape(prediction)[1]
+    box_xy, box_wh, objectness, class_probs = tf.split(prediction, (2, 2, 1, classes), axis=-1)
+    box_xy = tf.sigmoid(box_xy)
+    objectness = tf.sigmoid(objectness)
+    class_probs = tf.sigmoid(class_probs)
+    pred_box = tf.concat((box_xy, box_wh), axis=-1)  # original xywh for loss
+
+    # !!! grid[x][y] == (y, x)
+    grid = tf.meshgrid(tf.range(grid_size), tf.range(grid_size))
+    grid = tf.expand_dims(tf.stack(grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
+
+    box_xy = (box_xy + tf.cast(grid, tf.float32)) / tf.cast(grid_size, tf.float32)
+    box_wh = tf.exp(box_wh) * anchors
+
+    box_x1y1 = box_xy - box_wh / 2
+    box_x2y2 = box_xy + box_wh / 2
+    bbox = tf.concat([box_x1y1, box_x2y2], axis=-1)
+
+    return bbox, objectness, class_probs, pred_box
+
+def bbox_prediction(predictions, anchors, classes, img_size):
     num_anchors = len(anchors)
-    shape = prediction.get_shape().as_list()
-    grid_size = prediction.shape[1]
-    dim = grid_size ** 2
+
+    grid_size = predictions.shape[1]
+    dim = grid_size**2
     bbox_attrs = 5 + classes
 
-    prediction = tf.reshape(prediction, [-1, num_anchors * dim, bbox_attrs])
+    predictions = tf.reshape(predictions, [-1, num_anchors * dim, bbox_attrs])
 
     stride = img_size//grid_size
 
-    anchors = [(a[0]/stride, a[1]/stride) for a in anchors]
+    anchors = [(a[0] / stride, a[1] / stride) for a in anchors]
 
-    box_centers, box_sizes, confidence, classes = tf.split(prediction, [2, 2, 1, classes], axis=-1)
+    box_centers, box_sizes, confidence, classes = tf.split(predictions, [2, 2, 1, classes], axis=-1)
 
     box_centers = tf.nn.sigmoid(box_centers)
     confidence = tf.nn.sigmoid(confidence)
@@ -57,20 +79,18 @@ def bbox_prediction(prediction, anchors, classes, img_size):
     x_y_offset = tf.reshape(tf.tile(x_y_offset, [1, num_anchors]), [1, -1, 2])
 
     box_centers = box_centers + x_y_offset
-    box_centers = box_centers * stride
 
-    anchors = tf.cast(tf.tile(anchors, [dim, 1]), dtype=tf.float32)
+    box_centers = box_centers * tf.cast(stride, dtype=tf.float32)
 
-    box_sizes = tf.exp(box_sizes) * anchors
-    box_sizes = box_sizes * stride
+    anchors = tf.tile(anchors, [dim, 1])
+    box_sizes = tf.exp(box_sizes) * tf.cast(anchors, dtype=tf.float32)
+    box_sizes = box_sizes * tf.cast(stride, dtype=tf.float32)
 
     detections = tf.concat([box_centers, box_sizes, confidence], axis=-1)
 
     classes = tf.nn.sigmoid(classes)
-    prediction = tf.concat([detections, classes], axis=-1)
-    
-    return prediction
-
+    predictions = tf.concat([detections, classes], axis=-1)
+    return predictions
 
 def non_maximum_suppression(outputs, score_threshold, iou_threshold):
     b = []
@@ -98,27 +118,26 @@ def non_maximum_suppression(outputs, score_threshold, iou_threshold):
     )
 
 
-    nmsed_boxes = nmsed_boxes*416
-    nmsed_scores = tf.expand_dims(nmsed_scores, axis=2)
-    nmsed_classes = tf.expand_dims(nmsed_classes, axis=2)
+    # nmsed_boxes = nmsed_boxes*416
+    # nmsed_scores = tf.expand_dims(nmsed_scores, axis=2)
+    # nmsed_classes = tf.expand_dims(nmsed_classes, axis=2)
 
 
-    valid_outputs = None
-    for i in range(tf.shape(bbox)[0]):
-        valid = valid_detections[i]
-        if valid == 0:
-            continue
+    # valid_outputs = None
+    # for i in range(tf.shape(bbox)[0]):
+    #     valid = valid_detections[i]
+    #     if valid == 0:
+    #         continue
 
-        idx = tf.ones_like(nmsed_scores[i, :valid, :]) * i
-        valid_output = tf.concat((idx, nmsed_boxes[i, :valid, :], nmsed_scores[i, :valid, :], nmsed_classes[i, :valid, :]), axis=1)
+    #     idx = tf.ones_like(nmsed_scores[i, :valid, :]) * i
+    #     valid_output = tf.concat((idx, nmsed_boxes[i, :valid, :], nmsed_scores[i, :valid, :], nmsed_classes[i, :valid, :]), axis=1)
         
-        if valid_outputs is None:
-            valid_outputs = valid_output
-        else: 
-            valid_outputs = tf.concat((valid_outputs, valid_output), axis=0)
-    
+    #     if valid_outputs is None:
+    #         valid_outputs = valid_output
+    #     else: 
+    #         valid_outputs = tf.concat((valid_outputs, valid_output), axis=0)
 
-    return valid_outputs
+    return nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections
 
 def transform_output(output, im_dim_list, resolution):
     output = output.numpy()
