@@ -49,8 +49,8 @@ class Yolov3_Tiny(tf.keras.Model):
     def __init__(self, resolution=416):
         super(Yolov3_Tiny, self).__init__()
         self.resolution = resolution
-        # input = tf.keras.layers.Input([416, 416, 3])
-        input = tf.zeros((1,resolution,resolution,3))
+        # input_ = tf.keras.layers.Input([416, 416, 3])
+        input_ = tf.zeros((1,resolution,resolution,3))
         self.conv_0 = ConvolutionLayer(filters=16, kernel_size=3, strides=1, batch_norm=1)
         self.maxpool_0 = tf.keras.layers.MaxPool2D(pool_size=2, strides=2, padding="SAME", name="MaxPool2D")
         self.conv_1 = ConvolutionLayer(filters=32, kernel_size=3, strides=1, batch_norm=1)
@@ -79,7 +79,7 @@ class Yolov3_Tiny(tf.keras.Model):
 
         # first build
         start = time.time()
-        self(input)
+        self(input_)
         print("Finish build in {}".format(time.time()-start))
     
     def load_weights(self, weight_file):
@@ -124,7 +124,7 @@ class Yolov3_Tiny(tf.keras.Model):
 
 
     def call(self, x):
-        x = input = self.conv_0(x)
+        x = input_ = self.conv_0(x)
         x = self.maxpool_0(x)
         x = self.conv_1(x)
         x = self.maxpool_1(x)

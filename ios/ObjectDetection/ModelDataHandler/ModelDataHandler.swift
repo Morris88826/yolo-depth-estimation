@@ -25,7 +25,7 @@ typealias FileInfo = (name: String, extension: String)
 
 /// Information about the Yolo model.
 enum Yolo {
-  static let modelInfo: FileInfo = (name: "detect", extension: "tflite")
+  static let modelInfo: FileInfo = (name: "yolov3", extension: "tflite")
   static let labelsInfo: FileInfo = (name: "labelmap", extension: "txt")
 }
 
@@ -43,7 +43,7 @@ class ModelDataHandler: NSObject {
   let threshold: Float = 0.5
 
   // MARK: Model parameters
-  let batchSize = 2   /// We need a pair of photos each time # TODO: Change it back to 2
+  let batchSize = 1 /// We need a pair of photos each time # TODO: Change it back to 2
   let inputChannels = 3
   let inputWidth = 416 /// The Width and Height of YOLO should better be a multiple of 32
   let inputHeight = 416
