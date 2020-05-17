@@ -25,7 +25,7 @@ typealias FileInfo = (name: String, extension: String)
 
 /// Information about the Yolo model.
 enum Yolo {
-  static let modelInfo: FileInfo = (name: "yolov3", extension: "tflite")
+  static let modelInfo: FileInfo = (name: "yolov3-tiny.h5", extension: "tflite")
   static let labelsInfo: FileInfo = (name: "labelmap", extension: "txt")
 }
 
@@ -41,6 +41,7 @@ class ModelDataHandler: NSObject {
 
   /// TODO: Configure the threshold
   let threshold: Float = 0.5
+  let maxBoxes: Int = 5
 
   // MARK: Model parameters
   let batchSize = 1 /// We need a pair of photos each time # TODO: Change it back to 2
@@ -131,14 +132,15 @@ class ModelDataHandler: NSObject {
     }
 
     let interval: TimeInterval
+    let boxes_0: Tensor
 //    let outputBatchId: Tensor // TODO: Remove BatchId if it's not used
-    let outputBoundingBoxLeft: Tensor
-    let outputBoundingBoxTop: Tensor
-    let outputBoundingBoxRight: Tensor
-    let outputBoundingBoxBottom: Tensor
-    let outputConfidence: Tensor
-    let outputScores: Tensor
-    let outputClasses: Tensor
+//    let outputBoundingBoxLeft: Tensor
+//    let outputBoundingBoxTop: Tensor
+//    let outputBoundingBoxRight: Tensor
+//    let outputBoundingBoxBottom: Tensor
+//    let outputConfidence: Tensor
+//    let outputScores: Tensor
+//    let outputClasses: Tensor
     do {
       let inputTensor = try interpreter.input(at: 0)
 
@@ -160,28 +162,53 @@ class ModelDataHandler: NSObject {
       try interpreter.invoke()
       interval = Date().timeIntervalSince(startDate) * 1000
 
-//      outputBatchId = try interpreter.output(at: 0)
-      outputBoundingBoxLeft = try interpreter.output(at: 1)
-      outputBoundingBoxTop = try interpreter.output(at: 2)
-      outputBoundingBoxRight = try interpreter.output(at: 3)
-      outputBoundingBoxBottom = try interpreter.output(at: 4)
-      outputConfidence = try interpreter.output(at: 5)
-      outputScores = try interpreter.output(at: 6)
-      outputClasses = try interpreter.output(at: 7)
+      
+      boxes_0 = try interpreter.output(at: 0) /// [1, 3*13*13, 4+1+80] = [1, 507, 85]
+//      outputBoundingBoxLeft = try interpreter.output(at: 1)
+//      outputBoundingBoxTop = try interpreter.output(at: 2)
+//      outputBoundingBoxRight = try interpreter.output(at: 3)
+//      outputBoundingBoxBottom = try interpreter.output(at: 4)
+//      outputConfidence = try interpreter.output(at: 5)
+//      outputScores = try interpreter.output(at: 6)
+//      outputClasses = try interpreter.output(at: 7)
     } catch let error {
       print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
       return nil
     }
     
+    // Pick the top boxes with NMS
+    let a = boxes_0.data /// `Data` type: (only) 1-d array
+    var bboxes: [BoundingBox] = []
+    let dim2Width = boxes_0.shape.dimensions[2] /// normally c + 4 + 1 = 85
+    
+    
+    for cx in 0...12 {
+      for cy in 0...12 {
+        for b in 0...2 {
+          let d1 = ((cx * 13 + cy) * 3 + b) * dim2Width
+          
+          var rect: CGRect = CGRect.zero
+          rect.origin.x = CGFloat(a[d1+0])
+          rect.origin.y = CGFloat(a[d1+1])
+          rect.size.width = CGFloat(a[d1+2])
+          rect.size.height = CGFloat(a[d1+3])
+//          print(rect)
+          
+          let objectness: Float = Float(a[d1+4]) / 100.0
+          for c in 0...79 {
+//            bboxes.append(BoundingBox(classIndex: c, score: objectness * Float(a[d1+5+c]), rect: rect))
+            bboxes.append(BoundingBox(classIndex: c, score: objectness * Float(a[d1+5+c]) / 100.0, rect: rect))
+          }
+        }
+      }
+    }
+    let selectedIdx: [Int] = nonMaxSuppression(
+      boundingBoxes: bboxes, iouThreshold: threshold, maxBoxes: maxBoxes)
+    
     // Formats the results
     let resultArray = formatResults(
-      boundingBoxLeft: [Int](unsafeData: outputBoundingBoxLeft.data) ?? [],
-      boundingBoxTop: [Int](unsafeData: outputBoundingBoxTop.data) ?? [],
-      boundingBoxRight: [Int](unsafeData: outputBoundingBoxRight.data) ?? [],
-      boundingBoxBottom: [Int](unsafeData: outputBoundingBoxBottom.data) ?? [],
-      outputConfidence: [Float](unsafeData: outputConfidence.data) ?? [],
-      outputScores: [Float](unsafeData: outputScores.data) ?? [],
-      outputClasses: [Int](unsafeData: outputClasses.data) ?? [],
+      boundingBoxes: bboxes,
+      selectedIndexes: selectedIdx,
       width: CGFloat(imageWidth),
       height: CGFloat(imageHeight)
     )
@@ -193,16 +220,15 @@ class ModelDataHandler: NSObject {
 
   /// Filters out all the results with confidence score < threshold and returns the top N results
   /// sorted in descending order.
-  func formatResults(boundingBoxLeft: [Int], boundingBoxTop: [Int], boundingBoxRight: [Int], boundingBoxBottom: [Int],
-                     outputConfidence: [Float], outputScores: [Float], outputClasses: [Int],
+  func formatResults(boundingBoxes: [BoundingBox], selectedIndexes: [Int],
                      width: CGFloat, height: CGFloat) -> [Inference]{
     var resultsArray: [Inference] = []
-    if (outputClasses.count == 0) {
+    if (boundingBoxes.count == 0) {
       return resultsArray
     }
-    for i in 0...outputClasses.count - 1 {
+    for i in 0...boundingBoxes.count - 1 {
 
-      let score = outputConfidence[i] * outputScores[i] /// TODO: Check if this should be confidence, score, or both like this
+      let score = boundingBoxes[i].score
 
       // Filters results with confidence < threshold.
       guard score >= threshold else {
@@ -210,20 +236,16 @@ class ModelDataHandler: NSObject {
       }
 
       // Gets the output class names for detected classes from labels list.
-      let outputClassIndex = Int(outputClasses[i])
-      let outputClass = labels[outputClassIndex + 1]
+      let outputClassIndex = boundingBoxes[i].classIndex
+      let outputClass = labels[outputClassIndex]
 
-      var rect: CGRect = CGRect.zero
-
-      // Translates the detected bounding box to CGRect.
-      rect.origin.y = CGFloat(boundingBoxTop[i])
-      rect.origin.x = CGFloat(boundingBoxLeft[i])
-      rect.size.height = CGFloat(boundingBoxBottom[i]) - rect.origin.y
-      rect.size.width = CGFloat(boundingBoxRight[i]) - rect.origin.x
+      let rect: CGRect = boundingBoxes[i].rect
 
       // The detected corners are for model dimensions. So we scale the rect with respect to the
       // actual image dimensions.
-      let newRect = rect.applying(CGAffineTransform(scaleX: width, y: height))
+      /// TODO: Check if we really need scaling
+      let newRect = rect.applying(CGAffineTransform(scaleX: width/416.0, y: height/416.0))
+//      let newRect = rect
 
       // Gets the color assigned for the class
       let colorToAssign = colorForClass(withIndex: outputClassIndex + 1)
