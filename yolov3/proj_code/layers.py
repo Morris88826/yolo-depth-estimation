@@ -1,126 +1,175 @@
-import numpy as np
 import tensorflow as tf
-import time
-from util import bbox_prediction_v2, bbox_prediction
+import numpy as np
+from tensorflow.keras.layers import ZeroPadding2D, Conv2D, MaxPool2D, BatchNormalization, Lambda,Concatenate, LeakyReLU
+
+weights_file = "../weights/yolov3-tiny.weights"
+
+fd = open(weights_file, 'rb')
+header = np.fromfile(fd, dtype = np.int32, count = 5)
+header = tf.constant(header)
+seen = header[3]
+m_weights = np.fromfile(fd, dtype = np.float32)
+fd.close()
 
 
-yolo_tiny_anchors = np.array([(10, 14), (23, 27), (37, 58),
-                              (81, 82), (135, 169),  (344, 319)],
-                             np.float32) / 416
+class YoloLayer(tf.keras.layers.Layer):
+    def __init__(self, num_classes, anchors, input_dims, **kwargs):
+        super(YoloLayer, self).__init__(**kwargs)
+        self.num_classes = num_classes
+        self.anchors = anchors
+        self.input_dims = input_dims
 
-yolo_tiny_anchor_masks = np.array([[3,4,5],[0,1,2]])
+    def call(self, prediction):
+        batch_size = tf.shape(prediction)[0]
 
-def Conv2D_Block(x, filters, kernel_size, strides=1, batch_norm=True):
+        stride = self.input_dims // tf.shape(prediction)[1]
+        grid_size = self.input_dims // stride
+        num_anchors = len(self.anchors)
+
+        prediction = tf.reshape(prediction,
+                                shape=(batch_size, num_anchors * grid_size * grid_size, self.num_classes + 5))
+
+        box_xy = tf.sigmoid(prediction[:, :, :2])  # t_x (box x and y coordinates)
+        objectness = tf.sigmoid(prediction[:, :, 4])  # p_o (objectness score)
+        objectness = tf.expand_dims(objectness, 2)  # To make the same number of values for axis 0 and 1
+
+        grid = tf.range(grid_size)
+        a, b = tf.meshgrid(grid, grid)
+
+        x_offset = tf.reshape(a, (-1, 1))
+        y_offset = tf.reshape(b, (-1, 1))
+
+
+        x_y_offset = tf.concat([x_offset, y_offset], axis=-1)
+        x_y_offset = tf.reshape(tf.tile(x_y_offset, [1, num_anchors]), [1, -1, 2])
+        x_y_offset = tf.cast(x_y_offset, dtype='float32')
+
+        box_xy += x_y_offset
+
+        # Log space transform of the height and width
+        anchors = tf.cast([(a[0] / stride, a[1] / stride) for a in self.anchors], dtype='float32')
+        anchors = tf.tile(anchors, (grid_size * grid_size, 1))
+        anchors = tf.expand_dims(anchors, 0)
+
+        box_wh = tf.exp(prediction[:, :, 2:4]) * anchors
+
+        # Sigmoid class scores
+        class_scores = tf.sigmoid(prediction[:, :, 5:])
+
+        # Resize detection map back to the input image size
+        stride = tf.cast(stride, dtype='float32')
+        box_xy *= stride
+        box_wh *= stride
+
+        # Convert centoids to top left coordinates
+        box_xy -= box_wh / 2
+
+        return Concatenate(axis=2)([box_xy, box_wh, objectness, class_scores])
+
+    def get_config(self):
+        base_config = super(YoloLayer, self).get_config()
+
+        config = {
+            'num_classes': self.num_classes,
+            'anchors': self.anchors,
+            'input_dims': self.input_dims
+        }
+
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+def yolo_layer(x, block, layers, outputs, input_dims):
+    masks = [int(m) for m in block['mask'].split(',')]
+    
+    # Anchors used based on mask indices
+    anchors = [a for a in block['anchors'].split(',  ')]
+    anchors = [anchors[i] for i in range(len(anchors)) if i in masks]
+    anchors = [[int(a) for a in anchor.split(',')] for anchor in anchors]
+    classes = int(block['classes'])
+
+    x = YoloLayer(num_classes=classes, anchors=anchors, input_dims=input_dims)(x)
+    outputs.append(x)
+    # NOTE: Here we append None to specify that the preceding layer is a output layer
+    layers.append(None)
+
+    return x, layers, outputs
+
+def route_layer(x, block, layers):
+    select_layer_idx = [int(l) for l in block['layers'].split(',')]
+
+    if len(select_layer_idx) == 1:
+        x = layers[select_layer_idx[0]]
+        layers.append(x)
+
+    else:
+        x = Concatenate()([layers[select_layer_idx[0]], layers[select_layer_idx[1]]])
+        layers.append(x)
+
+    return x, layers
+
+
+def upsample_layer(x, block, layers):
+    size = int(block["stride"])
+    x = Lambda(lambda _x: tf.compat.v1.image.resize_bilinear(_x, (size * tf.shape(_x)[1], size * tf.shape(_x)[2])))(x)
+    layers.append(x)
+    return x, layers
+
+def maxpool_layer(x, block, layers):
+    kernel_size = int(block["size"])
+    stride = int(block["stride"])
+    x = MaxPool2D(pool_size=kernel_size, strides=stride, padding='SAME')(x)
+    layers.append(x)
+    return x, layers
+
+
+def conv_layer(x, block, layers, cur):
+    kernel_size = int(block["size"])
+    strides = int(block["stride"])
+    pad = int(block["pad"])
+    filters = int(block["filters"])
+    activation = block["activation"]
+    batch_norm = 'batch_normalize' in block
     padding = "VALID"
+
+    
     if strides == 1:
         padding = "SAME"
-    
-    x = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-               use_bias=not batch_norm)(x)
+
+
+    prev_layer_shape = tf.keras.backend.int_shape(x)
+    weights_shape = (kernel_size, kernel_size, prev_layer_shape[-1], filters) # The shape for weight height x width x in_channel x out_channel
+    conv_weight_shape = (filters, prev_layer_shape[-1], kernel_size, kernel_size) # The sequence the stored in weight file
+    num_conv_weights = np.product(weights_shape)
 
     if batch_norm:
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.LeakyReLU(alpha=0.1)(x)
-    return x
+        bn_weights = m_weights[cur:cur+4*filters] # [beta, gamma, moving_mean, moving_var]
+        cur += 4*filters
+        bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]] 
+                
+    else:
+        conv_bias = m_weights[cur:cur+filters]
+        cur += filters
 
-def Convolution(batch_size=None, name=None):
-    x = inputs = tf.keras.layers.Input([416, 416, 3], batch_size=batch_size)
-    x = Conv2D_Block(x, 16, 3)
-    x = tf.keras.layers.MaxPool2D(2, 2, 'same')(x)
-    x = Conv2D_Block(x, 32, 3)
-    x = tf.keras.layers.MaxPool2D(2, 2, 'same')(x)
-    x = Conv2D_Block(x, 64, 3)
-    x = tf.keras.layers.MaxPool2D(2, 2, 'same')(x)
-    x = Conv2D_Block(x, 128, 3)
-    x = tf.keras.layers.MaxPool2D(2, 2, 'same')(x)
-    x = x_8 = Conv2D_Block(x, 256, 3)  # skip connection
-    x = tf.keras.layers.MaxPool2D(2, 2, 'same')(x)
-    x = Conv2D_Block(x, 512, 3)
-    x = tf.keras.layers.MaxPool2D(2, 1, 'same')(x)
-    x = Conv2D_Block(x, 1024, 3)
-    return tf.keras.Model(inputs, (x_8, x), name=name)
+    conv_weights = m_weights[cur:cur+num_conv_weights]
+    cur += num_conv_weights
+
+    conv_weights = conv_weights.reshape(conv_weight_shape).transpose([2, 3, 1, 0])
+
+    if batch_norm:
+        conv_weights = [conv_weights]
+    else:
+        conv_weights = [conv_weights, conv_bias]
 
 
-def YoloConv(filters, batch_size = None, name=None):
-    def yolo_conv(x_in):
-        if isinstance(x_in, tuple):
-            print(batch_size)
-            inputs = tf.keras.layers.Input(x_in[0].shape[1:], batch_size=batch_size), tf.keras.layers.Input(x_in[1].shape[1:], batch_size=batch_size)
-            x, x_skip = inputs
-            # concat with skip connection
-            x = Conv2D_Block(x, filters, 1)
-            x = tf.keras.layers.UpSampling2D(2)(x)
-            x = tf.keras.layers.Concatenate()([x, x_skip])
-            print(x.shape)
-        else:
-            x = inputs = tf.keras.layers.Input(x_in.shape[1:], batch_size=batch_size)
-            x = Conv2D_Block(x, filters, 1)
+    if strides > 1:
+        x = ZeroPadding2D(((1, 0), (1, 0)))(x)
 
-        return tf.keras.Model(inputs, x, name=name)(x_in)
-    return yolo_conv
+    x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights)(x)
 
-def YoloOutput(filters, anchors, classes, batch_size=None, name=None):
-    def yolo_output(x_in):
-        x = inputs = tf.keras.layers.Input(x_in.shape[1:], batch_size=batch_size)
-        x = Conv2D_Block(x, filters * 2, 3)
-        x = Conv2D_Block(x, anchors * (classes + 5), 1, batch_norm=False)
-        # x = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, tf.shape(x)[1], tf.shape(x)[2],
-        #                                     anchors, classes + 5)))(x)
-        return tf.keras.Model(inputs, x, name=name)(x_in)
-    return yolo_output
+    if batch_norm:
+        x = BatchNormalization(weights=bn_weights)(x)
+        x = LeakyReLU(alpha=0.1)(x)
 
-def YoloV3_Tiny(input_shape=None, channels=3, anchors=yolo_tiny_anchors,
-               masks=yolo_tiny_anchor_masks, classes=80, score_threshold = 0.5, iou_threshold = 0.5, resolution=416):
+    layers.append(x)
     
-    batch_size, size, _, channels = input_shape
-    # batch_size = None
-    x = inputs = tf.keras.layers.Input([size, size, channels], name='input', batch_size=batch_size)
-
-    x_8, x = Convolution(batch_size=batch_size, name='convolution')(x)
-
-    x = YoloConv(256, batch_size=batch_size, name='yolo_conv_0')(x)
-    output_0 = YoloOutput(256, len(masks[0]), classes, batch_size=batch_size, name='yolo_output_0')(x)
-
-    x = YoloConv(128, batch_size=batch_size, name='yolo_conv_1')((x, x_8))
-    output_1 = YoloOutput(128, len(masks[1]), classes, batch_size=batch_size, name='yolo_output_1')(x)
-
-
-    boxes_0 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, np.array([(81, 82), (135, 169),  (344, 319)]), classes, resolution),
-                     name='yolo_boxes_0')(output_0)
-    boxes_1 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, np.array([(10, 14), (23, 27), (37, 58)]), classes, resolution),
-                     name='yolo_boxes_1')(output_1)
-    
-    outputs = tf.keras.layers.Concatenate(axis=1)([boxes_0, boxes_1])
-    # print(outputs.shape)
-    # outputs = tf.keras.layers.Lambda(lambda x: non_maximum_suppression(x, score_threshold, iou_threshold),
-    #                  name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
-    return tf.keras.Model(inputs, outputs, name='yolov3_tiny')
-
-
-def testing(input_shape=None, channels=3, anchors=yolo_tiny_anchors,
-               masks=yolo_tiny_anchor_masks, classes=80, score_threshold = 0.5, iou_threshold = 0.5):
-    
-    batch_size, height, width, channels = input_shape
-
-    batch_size = None
-
-    x = inputs = tf.keras.layers.Input([height, width, channels], name='input', batch_size=batch_size)
-
-    x_8, x = Convolution(batch_size=batch_size, name='convolution')(x)
-    x = YoloConv(256, batch_size=batch_size, name='yolo_conv_0')(x)
-    output_0 = YoloOutput(256, len(masks[0]), classes, batch_size=batch_size, name='yolo_output_0')(x)
-
-    x = YoloConv(128, batch_size=batch_size, name='yolo_conv_1')((x, x_8))
-    output_1 = YoloOutput(128, len(masks[1]), classes, batch_size=batch_size, name='yolo_output_1')(x)
-
-
-    boxes_0 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, np.array([(81, 82), (135, 169),  (344, 319)]), classes, height),
-                     name='yolo_boxes_0')(output_0)
-
-    boxes_1 = tf.keras.layers.Lambda(lambda x: bbox_prediction(x, np.array([(10, 14), (23, 27), (37, 58)]), classes, height),
-                     name='yolo_boxes_1')(output_1)
-
-    
-    # outputs = tf.keras.layers.Concatenate(axis=1)([boxes_0, boxes_1])
-
-    return tf.keras.Model(inputs, output_1, name="yolo")
+    return x, layers, cur
