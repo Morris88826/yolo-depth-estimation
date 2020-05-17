@@ -26,7 +26,7 @@ typealias FileInfo = (name: String, extension: String)
 /// Information about the Yolo model.
 enum Yolo {
   static let modelInfo: FileInfo = (name: "yolov3-tiny", extension: "tflite")
-  static let labelsInfo: FileInfo = (name: "labelmap", extension: "txt")
+  static let labelsInfo: FileInfo = (name: "coco", extension: "names")
 }
 
 /// This class handles all data preprocessing and makes calls to run inference on a given frame

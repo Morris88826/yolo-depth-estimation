@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		36B8412D4FA89B25C5B35511 /* Pods_ObjectDetection.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEBF175BF4D3214B206E06BA /* Pods_ObjectDetection.framework */; };
-		AA055D8921622F3E00B25948 /* labelmap.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA055D8821622F3E00B25948 /* labelmap.txt */; };
 		AA119EA2217F337300DE46CF /* ModelDataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA119EA1217F337300DE46CF /* ModelDataHandler.swift */; };
 		AA16E59B21807BAC00D9E153 /* InfoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA16E59921807A7000D9E153 /* InfoCell.swift */; };
 		AA16E59D218081AA00D9E153 /* InferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA16E59C218081AA00D9E153 /* InferenceViewController.swift */; };
@@ -22,20 +21,15 @@
 		AA9AC5D7212D43E0000B4E9D /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9AC5D5212D43E0000B4E9D /* PreviewView.swift */; };
 		AA9AC5E2212D4520000B4E9D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9AC5E1212D4520000B4E9D /* ViewController.swift */; };
 		AAAB09702189838A0015A1F2 /* CVPixelBufferExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAB096F2189838A0015A1F2 /* CVPixelBufferExtension.swift */; };
-		AAB1116D21511218008C215D /* detect.tflite in Resources */ = {isa = PBXBuildFile; fileRef = AAB1116B21511218008C215D /* detect.tflite */; };
 		AAC58495214797E800FB532F /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC58494214797E800FB532F /* StringExtension.swift */; };
 		AAEF3D8D21A2BE2B0073AE1C /* UIColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEF3D8C21A2BE2B0073AE1C /* UIColorExtension.swift */; };
-		CC3785A3246FDF3F00A50ECD /* _labelmap.txt in Resources */ = {isa = PBXBuildFile; fileRef = CC3785A1246FDF3F00A50ECD /* _labelmap.txt */; };
-		CC3785A4246FDF3F00A50ECD /* _detect.tflite in Resources */ = {isa = PBXBuildFile; fileRef = CC3785A2246FDF3F00A50ECD /* _detect.tflite */; };
-		CC849C8E2471061E005F828C /* yolov3.tflite in Resources */ = {isa = PBXBuildFile; fileRef = CC849C8D2471061E005F828C /* yolov3.tflite */; };
-		CC849C9224712E05005F828C /* yolov3-tiny.h5.tflite in Resources */ = {isa = PBXBuildFile; fileRef = CC849C9124712E05005F828C /* yolov3-tiny.h5.tflite */; };
+		CC2C0C2E2471C55C00B5F498 /* yolov3-tiny.tflite in Resources */ = {isa = PBXBuildFile; fileRef = CC2C0C2C2471C55C00B5F498 /* yolov3-tiny.tflite */; };
+		CC2C0C302471C59600B5F498 /* coco.names in Resources */ = {isa = PBXBuildFile; fileRef = CC2C0C2F2471C59500B5F498 /* coco.names */; };
 		CC849C94247132D4005F828C /* NonMaxSupression.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC849C93247132D4005F828C /* NonMaxSupression.swift */; };
-		CC9AE37624719DDB00DED384 /* yolov3-tiny.tflite in Resources */ = {isa = PBXBuildFile; fileRef = CC9AE37524719DDB00DED384 /* yolov3-tiny.tflite */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		4D6E0F359E6E87DADCDE1749 /* Pods-ObjectDetection.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ObjectDetection.debug.xcconfig"; path = "Target Support Files/Pods-ObjectDetection/Pods-ObjectDetection.debug.xcconfig"; sourceTree = "<group>"; };
-		AA055D8821622F3E00B25948 /* labelmap.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = labelmap.txt; sourceTree = "<group>"; };
 		AA119EA1217F337300DE46CF /* ModelDataHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModelDataHandler.swift; sourceTree = "<group>"; };
 		AA16E59921807A7000D9E153 /* InfoCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoCell.swift; sourceTree = "<group>"; };
 		AA16E59C218081AA00D9E153 /* InferenceViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InferenceViewController.swift; sourceTree = "<group>"; };
@@ -51,16 +45,12 @@
 		AA9AC5D5212D43E0000B4E9D /* PreviewView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
 		AA9AC5E1212D4520000B4E9D /* ViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		AAAB096F2189838A0015A1F2 /* CVPixelBufferExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CVPixelBufferExtension.swift; sourceTree = "<group>"; };
-		AAB1116B21511218008C215D /* detect.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = detect.tflite; sourceTree = "<group>"; };
 		AAC58494214797E800FB532F /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		AAEF3D8C21A2BE2B0073AE1C /* UIColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIColorExtension.swift; sourceTree = "<group>"; };
 		C4FB5546196B42E787BF4A94 /* Pods-ObjectDetection.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ObjectDetection.release.xcconfig"; path = "Target Support Files/Pods-ObjectDetection/Pods-ObjectDetection.release.xcconfig"; sourceTree = "<group>"; };
-		CC3785A1246FDF3F00A50ECD /* _labelmap.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = _labelmap.txt; sourceTree = "<group>"; };
-		CC3785A2246FDF3F00A50ECD /* _detect.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = _detect.tflite; sourceTree = "<group>"; };
-		CC849C8D2471061E005F828C /* yolov3.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolov3.tflite; sourceTree = "<group>"; };
-		CC849C9124712E05005F828C /* yolov3-tiny.h5.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = "yolov3-tiny.h5.tflite"; sourceTree = "<group>"; };
+		CC2C0C2C2471C55C00B5F498 /* yolov3-tiny.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = "yolov3-tiny.tflite"; sourceTree = "<group>"; };
+		CC2C0C2F2471C59500B5F498 /* coco.names */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = coco.names; sourceTree = "<group>"; };
 		CC849C93247132D4005F828C /* NonMaxSupression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonMaxSupression.swift; sourceTree = "<group>"; };
-		CC9AE37524719DDB00DED384 /* yolov3-tiny.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = "yolov3-tiny.tflite"; sourceTree = "<group>"; };
 		CEBF175BF4D3214B206E06BA /* Pods_ObjectDetection.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ObjectDetection.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -96,13 +86,8 @@
 		AA09263B212D730700D5890F /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				CC3785A2246FDF3F00A50ECD /* _detect.tflite */,
-				CC849C8D2471061E005F828C /* yolov3.tflite */,
-				CC849C9124712E05005F828C /* yolov3-tiny.h5.tflite */,
-				CC9AE37524719DDB00DED384 /* yolov3-tiny.tflite */,
-				CC3785A1246FDF3F00A50ECD /* _labelmap.txt */,
-				AAB1116B21511218008C215D /* detect.tflite */,
-				AA055D8821622F3E00B25948 /* labelmap.txt */,
+				CC2C0C2F2471C59500B5F498 /* coco.names */,
+				CC2C0C2C2471C55C00B5F498 /* yolov3-tiny.tflite */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -259,16 +244,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA055D8921622F3E00B25948 /* labelmap.txt in Resources */,
-				AAB1116D21511218008C215D /* detect.tflite in Resources */,
-				CC3785A3246FDF3F00A50ECD /* _labelmap.txt in Resources */,
-				CC3785A4246FDF3F00A50ECD /* _detect.tflite in Resources */,
-				CC849C9224712E05005F828C /* yolov3-tiny.h5.tflite in Resources */,
-				CC9AE37624719DDB00DED384 /* yolov3-tiny.tflite in Resources */,
+				CC2C0C302471C59600B5F498 /* coco.names in Resources */,
+				CC2C0C2E2471C55C00B5F498 /* yolov3-tiny.tflite in Resources */,
 				AA9AC5A9212D39FD000B4E9D /* LaunchScreen.storyboard in Resources */,
 				AA9AC5A6212D39FD000B4E9D /* Assets.xcassets in Resources */,
 				AA9AC5A4212D39FC000B4E9D /* Main.storyboard in Resources */,
-				CC849C8E2471061E005F828C /* yolov3.tflite in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
