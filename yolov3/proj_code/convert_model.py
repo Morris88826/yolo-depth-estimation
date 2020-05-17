@@ -10,7 +10,8 @@ def convert_to_tflite(model_path, tflite_path, input_shape={'input_1': [1, 416, 
     keras_model = tf.keras.models.load_model(model_path, custom_objects={"YoloLayer":YoloLayer})
     converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
     # converter = tf.compat.v1.lite.TocoConverter.from_keras_model_file(model_path, input_shapes=input_shape)
-
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.target_spec.supported_types = [tf.compat.v1.lite.constants.FLOAT16]
     tflite_model = converter.convert()
     open(tflite_path, "wb").write(tflite_model)
     print("TFLite Model converted")
