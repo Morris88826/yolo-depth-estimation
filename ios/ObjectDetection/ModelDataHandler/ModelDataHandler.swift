@@ -40,7 +40,7 @@ class ModelDataHandler: NSObject {
   let threadCountLimit = 10
 
   /// TODO: Configure the threshold
-  let confidenceThresh: Float = 0.2
+  let confidenceThresh: Float = 0.3
   let nmsThresh: Float = 0.4
 
   // MARK: Model parameters
