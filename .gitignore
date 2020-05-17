@@ -11,6 +11,6 @@ yolov3/yolov3/proj_code/__pycache__/*
 **/*.pyc
 
 # Developer-dependent
-ios/ObjectDetection.xcodeproj/project.pbxproj
+# ios/ObjectDetection.xcodeproj/project.pbxproj
 ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad/UserInterfaceState.xcuserstate
 
