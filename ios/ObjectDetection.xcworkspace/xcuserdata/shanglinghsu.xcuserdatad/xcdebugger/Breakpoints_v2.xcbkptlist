@@ -67,53 +67,5 @@
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "D8C7ECA6-61D4-4259-9CFB-2588F6A535F4"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ObjectDetection/ViewControllers/ViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "48"
-            endingLineNumber = "48"
-            landmarkName = "modelDataHandler"
-            landmarkType = "24">
-            <Locations>
-               <Location
-                  uuid = "D8C7ECA6-61D4-4259-9CFB-2588F6A535F4 - bd98cc689f90b19a"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "Object_Detection.ViewController.init(nibName: Swift.Optional&lt;Swift.String&gt;, bundle: Swift.Optional&lt;__C.NSBundle&gt;) -&gt; Object_Detection.ViewController"
-                  moduleName = "Object Detection"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/shanglinghsu/comp4471/ios/ObjectDetection/ViewControllers/ViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "48"
-                  endingLineNumber = "48"
-                  offsetFromSymbolStart = "1948">
-               </Location>
-               <Location
-                  uuid = "D8C7ECA6-61D4-4259-9CFB-2588F6A535F4 - 7c57bfab5dc8fee1"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "Object_Detection.ViewController.init(coder: __C.NSCoder) -&gt; Swift.Optional&lt;Object_Detection.ViewController&gt;"
-                  moduleName = "Object Detection"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/shanglinghsu/comp4471/ios/ObjectDetection/ViewControllers/ViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "48"
-                  endingLineNumber = "48"
-                  offsetFromSymbolStart = "1916">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
    </Breakpoints>
 </Bucket>
