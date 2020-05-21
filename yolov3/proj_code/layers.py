@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.layers import ZeroPadding2D, Conv2D, MaxPool2D, BatchNormalization, Lambda,Concatenate, LeakyReLU
+from tensorflow.keras.layers import ZeroPadding2D, Conv2D, MaxPool2D, BatchNormalization, Lambda,Concatenate, LeakyReLU, Conv2DTranspose
 
 weights_file = "../weights/yolov3-tiny.weights"
 
@@ -173,3 +173,27 @@ def conv_layer(x, block, layers, cur):
     layers.append(x)
     
     return x, layers, cur
+
+
+
+def conv_transpose_layer(x, block, layers):
+    kernel_size = int(block["size"])
+    strides = int(block["stride"])
+    pad = int(block["pad"])
+    filters = int(block["filters"])
+    batch_norm = 'batch_normalize' in block
+    padding = "SAME"
+
+    if pad == True:
+        padding = "VALID"
+
+   
+    x = Conv2DTranspose(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding)(x)
+
+    if batch_norm:
+        x = BatchNormalization()(x)
+        x = LeakyReLU(alpha=0.1)(x)
+
+    layers.append(x)
+    
+    return x, layers

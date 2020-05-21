@@ -15,16 +15,12 @@ print(model.summary())
 
 output, _ = model(tf.zeros((1,416,416,3)))
 
-print(model.optimizer)
-
 # Print output shape (Should be (N x ((13x13)+(15x15))*3 x (C+85)) )
-# print(output.shape)
+print(output.shape)
 
 
 
-
-# # Save and convert model
-
+# Save and convert model
 # save_and_convert(model)
 
 # # Load tflite
