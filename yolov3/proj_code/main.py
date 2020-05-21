@@ -7,11 +7,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
         
 inputs = Input(shape=(416, 416, 3))
-outputs = Yolov3_Tiny(inputs)
-model = Model(inputs, outputs)
+outputs, depth = Yolov3_Tiny(inputs)
+model = Model(inputs, (outputs, depth))
+
 print(model.summary())
 
-output = model(tf.zeros((1,416,416,3)))
+
+output, _ = model(tf.zeros((1,416,416,3)))
 
 print(model.optimizer)
 
@@ -20,7 +22,9 @@ print(model.optimizer)
 
 
 
+
 # # Save and convert model
+
 # save_and_convert(model)
 
 # # Load tflite

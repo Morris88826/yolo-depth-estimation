@@ -2,6 +2,8 @@
 yolov3/weights/*
 yolov3/results/*
 yolov3/models/*
+yolov3/coco/*
+yolov3/coco.gshortcut
 
 # MacOS-generated directory metadata
 **/.DS_Store
