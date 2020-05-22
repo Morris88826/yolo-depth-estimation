@@ -164,10 +164,10 @@ def conv_layer(x, block, layers, cur):
     if strides > 1:
         x = ZeroPadding2D(((1, 0), (1, 0)))(x)
 
-    x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights)(x)
+    x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights, trainable=False)(x)
 
     if batch_norm:
-        x = BatchNormalization(weights=bn_weights)(x)
+        x = BatchNormalization(weights=bn_weights, trainable=False)(x)
         x = LeakyReLU(alpha=0.1)(x)
 
     layers.append(x)

@@ -2,7 +2,10 @@ import tensorflow as tf
 from tensorflow.keras import Input, Model
 from yolo import Yolov3_Tiny
 from convert_model import *
+from trainer import Trainer
+from dataloader import load_images, create_batches
 import os
+import time 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
         
@@ -10,13 +13,30 @@ inputs = Input(shape=(416, 416, 3))
 outputs, depth = Yolov3_Tiny(inputs)
 model = Model(inputs, (outputs, depth))
 
-print(model.summary())
+trainer = Trainer(model)
+epochs = 3
+batches = []
+
+# Prepare traininng images for depth
+train_data_dir = "../nyu_train.csv"
+images, gts = load_images(train_data_dir)
+batches = create_batches(images, gts, batch_size=100)
+
+print("Start training")
+for e in range(epochs):
+    for idx, batch in enumerate(batches):
+        images, gts = batch
+        start = time.time()
+        loss = trainer.train(images, gts)
+        print('Epoch {} Batch {} loss={} ---- {}s'.format(e, idx, loss, time.time()-start)) 
+print("Finish Train")
 
 
-output, _ = model(tf.zeros((1,416,416,3)))
+# for layer in model.layers[]:
+#     print(layer.name)
+#     print(layer.trainable)
+# print(model.summary())
 
-# Print output shape (Should be (N x ((13x13)+(15x15))*3 x (C+85)) )
-print(output.shape)
 
 
 
