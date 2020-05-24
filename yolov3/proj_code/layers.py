@@ -82,26 +82,21 @@ class YoloLayer(tf.keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-# Untrainable Operations
-bn_op = functools.partial(BatchNormalization, trainable=False)
-conv_op = functools.partial(Conv2D, trainable=False)
-convtrans_op = functools.partial(Conv2DTranspose, trainable=False)
-yolo_op = functools.partial(YoloLayer, trainable=False)
-
-
 def yolo_layer(x, block, layers, outputs, input_dims):
-    masks = [int(m) for m in block['mask'].split(',')]
-    
-    # Anchors used based on mask indices
-    anchors = [a for a in block['anchors'].split(',  ')]
-    anchors = [anchors[i] for i in range(len(anchors)) if i in masks]
-    anchors = [[int(a) for a in anchor.split(',')] for anchor in anchors]
-    classes = int(block['classes'])
+    with tf.name_scope('yolo'):
 
-    x = yolo_op(num_classes=classes, anchors=anchors, input_dims=input_dims)(x)
-    outputs.append(x)
-    # NOTE: Here we append None to specify that the preceding layer is a output layer
-    layers.append(None)
+        masks = [int(m) for m in block['mask'].split(',')]
+        
+        # Anchors used based on mask indices
+        anchors = [a for a in block['anchors'].split(',  ')]
+        anchors = [anchors[i] for i in range(len(anchors)) if i in masks]
+        anchors = [[int(a) for a in anchor.split(',')] for anchor in anchors]
+        classes = int(block['classes'])
+
+        x = YoloLayer(num_classes=classes, anchors=anchors, input_dims=input_dims)(x)
+        outputs.append(x)
+        # NOTE: Here we append None to specify that the preceding layer is a output layer
+        layers.append(None)
 
     return x, layers, outputs
 
@@ -134,54 +129,56 @@ def maxpool_layer(x, block, layers):
 
 
 def conv_layer(x, block, layers, cur):
-    kernel_size = int(block["size"])
-    strides = int(block["stride"])
-    pad = int(block["pad"])
-    filters = int(block["filters"])
-    activation = block["activation"]
-    batch_norm = 'batch_normalize' in block
-    padding = "VALID"
+    with tf.variable_scope('conv'):
 
-    
-    if strides == 1:
-        padding = "SAME"
+        kernel_size = int(block["size"])
+        strides = int(block["stride"])
+        pad = int(block["pad"])
+        filters = int(block["filters"])
+        activation = block["activation"]
+        batch_norm = 'batch_normalize' in block
+        padding = "VALID"
 
-
-    prev_layer_shape = tf.keras.backend.int_shape(x)
-    weights_shape = (kernel_size, kernel_size, prev_layer_shape[-1], filters) # The shape for weight height x width x in_channel x out_channel
-    conv_weight_shape = (filters, prev_layer_shape[-1], kernel_size, kernel_size) # The sequence the stored in weight file
-    num_conv_weights = np.product(weights_shape)
-
-    if batch_norm:
-        bn_weights = m_weights[cur:cur+4*filters] # [beta, gamma, moving_mean, moving_var]
-        cur += 4*filters
-        bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]] 
-                
-    else:
-        conv_bias = m_weights[cur:cur+filters]
-        cur += filters
-
-    conv_weights = m_weights[cur:cur+num_conv_weights]
-    cur += num_conv_weights
-
-    conv_weights = conv_weights.reshape(conv_weight_shape).transpose([2, 3, 1, 0])
-
-    if batch_norm:
-        conv_weights = [conv_weights]
-    else:
-        conv_weights = [conv_weights, conv_bias]
+        
+        if strides == 1:
+            padding = "SAME"
 
 
-    if strides > 1:
-        x = ZeroPadding2D(((1, 0), (1, 0)))(x)
+        prev_layer_shape = tf.keras.backend.int_shape(x)
+        weights_shape = (kernel_size, kernel_size, prev_layer_shape[-1], filters) # The shape for weight height x width x in_channel x out_channel
+        conv_weight_shape = (filters, prev_layer_shape[-1], kernel_size, kernel_size) # The sequence the stored in weight file
+        num_conv_weights = np.product(weights_shape)
 
-    x = conv_op(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights, trainable=False)(x)
+        if batch_norm:
+            bn_weights = m_weights[cur:cur+4*filters] # [beta, gamma, moving_mean, moving_var]
+            cur += 4*filters
+            bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]] 
+                    
+        else:
+            conv_bias = m_weights[cur:cur+filters]
+            cur += filters
 
-    if batch_norm:
-        x = bn_op(weights=bn_weights, trainable=False)(x)
-        x = LeakyReLU(alpha=0.1)(x)
+        conv_weights = m_weights[cur:cur+num_conv_weights]
+        cur += num_conv_weights
 
-    layers.append(x)
+        conv_weights = conv_weights.reshape(conv_weight_shape).transpose([2, 3, 1, 0])
+
+        if batch_norm:
+            conv_weights = [conv_weights]
+        else:
+            conv_weights = [conv_weights, conv_bias]
+
+
+        if strides > 1:
+            x = ZeroPadding2D(((1, 0), (1, 0)))(x)
+
+        x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights, trainable=False)(x)
+
+        if batch_norm:
+            x = BatchNormalization(weights=bn_weights, trainable=False)(x)
+            x = LeakyReLU(alpha=0.1)(x)
+
+        layers.append(x)
     
     return x, layers, cur
 
@@ -199,10 +196,10 @@ def conv_transpose_layer(x, block, layers):
         padding = "VALID"
 
    
-    x = convtrans_op(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding)(x)
+    x = Conv2DTranspose(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding)(x)
 
     if batch_norm:
-        x = bn_op()(x)
+        x = BatchNormalization()(x)
         x = LeakyReLU(alpha=0.1)(x)
 
     layers.append(x)
