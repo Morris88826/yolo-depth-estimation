@@ -1,59 +1,55 @@
-from __future__ import division
-import time
-from preprocessing import *
-import numpy as np
-import cv2 
-from util import *
-import argparse
-import os 
-import os.path as osp
-from darknet_tf import Darknet
-import pandas as pd
-import random
-from gen_prediction import *
-import pickle as pkl
-from detector_tf import *
-from depth_calculation.common import *
+import tensorflow as tf
+from tensorflow.keras import Input, Model
+from yolo import Yolov3_Tiny
+from convert_model import *
+from trainer import Trainer
+from dataloader import load_images, create_batches
+import os
+import time 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-#Set up the neural network
-cfgfile_dir = "../cfg/yolov3-tiny.cfg"
-weights_dir = "../weights/yolov3-tiny.weights"
-class_name_dir = "../data/coco.names"
-colors_dir = "../data/pallete.dms"
-batch_size = 10
-resolution = 416
-num_classes = 80
-confidence = 0.4
-nms_thesh = 0.5
-model = Darknet(num_classes, cfgfile_dir, class_name_dir, size=resolution, weight_file=weights_dir)
-print("Network successfully loaded")
+        
+inputs = Input(shape=(416, 416, 3))
+outputs, depth = Yolov3_Tiny(inputs)
+model = Model(inputs, (outputs, depth))
 
+trainer = Trainer(model)
+epochs = 5
+batches = []
 
+# Prepare traininng images for depth
+train_data_dir = "../nyu_train.csv"
+images, gts = load_images(train_data_dir)
+batches = create_batches(images, gts, batch_size=100)
 
-# Loading images
-images_dir = "../images"
-output_dir = "../results"
-imlist = [ images_dir + "/" + img for img in os.listdir(images_dir) if (img[0]!=".")]
-loaded_ims = [cv2.imread(x) for x in imlist]
-
-#List containing dimensions of original images
-im_dim_list = [(x.shape[1], x.shape[0]) for x in loaded_ims]
-im_dim_list = np.array(im_dim_list, dtype=float)
-
-# Create batches
-im_batches = list(map(preprocess_image, loaded_ims, [resolution for x in range(len(imlist))]))
-im_batches = create_batches(im_batches, batch_size)
-
-# Create my detector
-my_detector = Detector(model, batch_size=batch_size)
-output = my_detector(im_batches, confidence=confidence, nms_thesh=nms_thesh)
-
-# Transform output based on input image size
-# output shape = Nx6 (index 0 stores the picture id)
-output = transform_output(output, im_dim_list, resolution)
+print("Start training")
+for e in range(epochs):
+    ckpt_dir = "../ckpt/cp_{}".format(e)
+    for idx, batch in enumerate(batches):
+        images, gts = batch
+        start = time.time()
+        loss = trainer.train(images, gts)
+        print('Epoch {} Batch {} loss={} ---- {}s'.format(e, idx, loss, time.time()-start)) 
+    
+    model.save_weights(ckpt_dir)
+    print("Epoch {}, saving weights".format(e))
+print("Finish Train")
 
 
-# Print and save the draw box using output
-my_detector.draw_box(output, loaded_ims, imlist, colors_dir, output_dir)
+# for layer in model.layers[]:
+#     print(layer.name)
+#     print(layer.trainable)
+# print(model.summary())
 
-# find_depth(output, loaded_ims)
+
+
+
+# Save and convert model
+save_model(model, model_path="../models/yolov3-depth-tiny.h5")
+# save_and_convert(model)
+
+# # Load tflite
+# model_path = "../models/yolov3-tiny.tflite"
+# interpreter = tf.lite.Interpreter(model_path=model_path)
+# interpreter.allocate_tensors()
+# print("Load successfully")

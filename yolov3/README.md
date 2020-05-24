@@ -12,27 +12,16 @@ wget https://pjreddie.com/media/files/yolov3-tiny.weights
 ``` 
 
 ## Brief explanation
-All the related code is stores in proj_code folder. 
+Currently can run using main.py 
 
-"detector_tf.py" contains the Detector class which takes in a model and batch_size
-
-We first create our detector given our model then use **predict** function to give out the prediction output. 
-
-```clike
-def predict(self, im_batches, confidence=0.35, nms_thesh=0.2, print_info=True):
-    ### Input
-    ### im_batches:  a list of batches, each batch is in shape (N, H, W, C)
-    
-    ### Output
-    ### prediction: (number_of_detection x 8)
-    ###             for dim=1, the first index stores the batch_id, 
-    ###             index[1:5] stores the bounding box coordinates(topleft, bottomright) 
-    ###             index[-1] stores the predicted class index
+Active files:
+1. main.py
+2. model.py
+3. util.py
+4. preprocessing.py
+5. convert_model.py
 
 
-```
-## Test case
-Just run "detector.py"
 
 
 
