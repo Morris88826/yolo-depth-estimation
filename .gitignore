@@ -9,9 +9,9 @@ yolov3/coco.gshortcut
 **/.DS_Store
 
 # Caches
-**/*.pyc
+**.pyc
 
 # Developer-dependent
-ios/ObjectDetection.xcodeproj/project.pbxproj
+# ios/ObjectDetection.xcodeproj/project.pbxproj
 ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad/UserInterfaceState.xcuserstate
 
