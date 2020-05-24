@@ -2,13 +2,14 @@
 yolov3/weights/*
 yolov3/results/*
 yolov3/models/*
-yolov3/yolov3/proj_code/__pycache__/*
+yolov3/coco/*
+yolov3/coco.gshortcut
 
 # MacOS-generated directory metadata
 **/.DS_Store
 
 # Caches
-**/*.pyc
+**.pyc
 
 # Developer-dependent
 # ios/ObjectDetection.xcodeproj/project.pbxproj

@@ -2,27 +2,54 @@ import tensorflow as tf
 from tensorflow.keras import Input, Model
 from yolo import Yolov3_Tiny
 from convert_model import *
+from trainer import Trainer
+from dataloader import load_images, create_batches
 import os
+import time 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
         
 inputs = Input(shape=(416, 416, 3))
-outputs = Yolov3_Tiny(inputs)
-model = Model(inputs, outputs)
-print(model.summary())
+outputs, depth = Yolov3_Tiny(inputs)
+model = Model(inputs, (outputs, depth))
 
-output = model(tf.zeros((1,416,416,3)))
+trainer = Trainer(model)
+epochs = 5
+batches = []
 
-# Print output shape (Should be (N x ((13x13)+(15x15))*3 x (C+85)) )
-print(output.shape)
+# Prepare traininng images for depth
+train_data_dir = "../nyu_train.csv"
+images, gts = load_images(train_data_dir)
+batches = create_batches(images, gts, batch_size=100)
+
+print("Start training")
+for e in range(epochs):
+    ckpt_dir = "../ckpt/cp_{}".format(e)
+    for idx, batch in enumerate(batches):
+        images, gts = batch
+        start = time.time()
+        loss = trainer.train(images, gts)
+        print('Epoch {} Batch {} loss={} ---- {}s'.format(e, idx, loss, time.time()-start)) 
+    
+    model.save_weights(ckpt_dir)
+    print("Epoch {}, saving weights".format(e))
+print("Finish Train")
+
+
+# for layer in model.layers[]:
+#     print(layer.name)
+#     print(layer.trainable)
+# print(model.summary())
+
 
 
 
 # Save and convert model
-save_and_convert(model)
+save_model(model, model_path="../models/yolov3-depth-tiny.h5")
+# save_and_convert(model)
 
-# Load tflite
-model_path = "../models/yolov3-tiny.tflite"
-interpreter = tf.lite.Interpreter(model_path=model_path)
-interpreter.allocate_tensors()
-print("Load successfully")
+# # Load tflite
+# model_path = "../models/yolov3-tiny.tflite"
+# interpreter = tf.lite.Interpreter(model_path=model_path)
+# interpreter.allocate_tensors()
+# print("Load successfully")
