@@ -129,7 +129,7 @@ def maxpool_layer(x, block, layers):
 
 
 def conv_layer(x, block, layers, cur):
-    with tf.variable_scope('conv'):
+    with tf.name_scope('conv'):
 
         kernel_size = int(block["size"])
         strides = int(block["stride"])

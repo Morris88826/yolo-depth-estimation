@@ -1,11 +1,14 @@
+import os
+import time
+
 import tensorflow as tf
 from tensorflow.keras import Input, Model
-from yolo import Yolov3_Tiny
+
 from convert_model import *
+from dataloader import create_batches, load_images
 from trainer import Trainer
-from dataloader import load_images, create_batches
-import os
-import time 
+from yolo import Yolov3_Tiny
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
         
@@ -13,14 +16,29 @@ inputs = Input(shape=(416, 416, 3))
 outputs, depth = Yolov3_Tiny(inputs)
 model = Model(inputs, (outputs, depth))
 
+model.compile(optimizer='rmsprop', loss='mean_squared_error')
+
 trainer = Trainer(model)
-epochs = 5
+epochs = 1
 batches = []
 
 # Prepare traininng images for depth
-train_data_dir = "../nyu_train.csv"
+train_data_dir = "../nyu_eval.csv"
 images, gts = load_images(train_data_dir)
 batches = create_batches(images, gts, batch_size=100)
+
+# x_eval = images[-2:]
+# y_eval = gts[-2:]
+# x_train = images[:-2]
+# y_train = gts[:-2]
+
+# # Train the model.
+# print('# Fit model on training data')
+# history = model.fit(x_train, y_train, )
+#                     # batch_size=100, epochs=epochs, 
+#                     # validation_data=(x_val, y_val),)
+
+# print('\nhistory dict:', history.history)
 
 print("Start training")
 for e in range(epochs):

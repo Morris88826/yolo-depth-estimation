@@ -3,7 +3,15 @@ yolov3/weights/*
 yolov3/results/*
 yolov3/models/*
 yolov3/coco/*
+yolov3/**.gshortcut
+
+yolov3/data/nyu_depth_v2_labeled.mat
+yolov3/data/nyu_datasets
+yolov3/ckpt.gshortcut
 yolov3/coco.gshortcut
+yolov3/data/nyu_datasets.gshortcut
+yolov3/proj_code/nyu_depth_v2_labeled.mat
+yolov3/nyu_eval.csv
 
 # MacOS-generated directory metadata
 **/.DS_Store
@@ -18,3 +26,6 @@ ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad/UserInterfac
 # Model ckpt
 efficientdet/__pycache__
 efficientdet/efficientdet-d0
+
+
+yolov3/proj_code/logs**
