@@ -14,7 +14,7 @@ outputs, depth = Yolov3_Tiny(inputs)
 model = Model(inputs, (outputs, depth))
 
 trainer = Trainer(model)
-epochs = 3
+epochs = 5
 batches = []
 
 # Prepare traininng images for depth
@@ -24,11 +24,15 @@ batches = create_batches(images, gts, batch_size=100)
 
 print("Start training")
 for e in range(epochs):
+    ckpt_dir = "../ckpt/cp_{}".format(e)
     for idx, batch in enumerate(batches):
         images, gts = batch
         start = time.time()
         loss = trainer.train(images, gts)
         print('Epoch {} Batch {} loss={} ---- {}s'.format(e, idx, loss, time.time()-start)) 
+    
+    model.save_weights(ckpt_dir)
+    print("Epoch {}, saving weights".format(e))
 print("Finish Train")
 
 
@@ -41,6 +45,7 @@ print("Finish Train")
 
 
 # Save and convert model
+save_model(model, model_path="../models/yolov3-depth-tiny.h5")
 # save_and_convert(model)
 
 # # Load tflite
