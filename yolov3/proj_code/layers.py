@@ -1,6 +1,10 @@
-import tensorflow as tf
+import functools
+
 import numpy as np
-from tensorflow.keras.layers import ZeroPadding2D, Conv2D, MaxPool2D, BatchNormalization, Lambda,Concatenate, LeakyReLU, Conv2DTranspose
+import tensorflow as tf
+from tensorflow.keras.layers import (BatchNormalization, Concatenate, Conv2D,
+                                     Conv2DTranspose, Lambda, LeakyReLU,
+                                     MaxPool2D, ZeroPadding2D)
 
 weights_file = "../weights/yolov3-tiny.weights"
 
@@ -78,6 +82,13 @@ class YoloLayer(tf.keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
+# Untrainable Operations
+bn_op = functools.partial(BatchNormalization, trainable=False)
+conv_op = functools.partial(Conv2D, trainable=False)
+convtrans_op = functools.partial(Conv2DTranspose, trainable=False)
+yolo_op = functools.partial(YoloLayer, trainable=False)
+
+
 def yolo_layer(x, block, layers, outputs, input_dims):
     masks = [int(m) for m in block['mask'].split(',')]
     
@@ -87,7 +98,7 @@ def yolo_layer(x, block, layers, outputs, input_dims):
     anchors = [[int(a) for a in anchor.split(',')] for anchor in anchors]
     classes = int(block['classes'])
 
-    x = YoloLayer(num_classes=classes, anchors=anchors, input_dims=input_dims)(x)
+    x = yolo_op(num_classes=classes, anchors=anchors, input_dims=input_dims)(x)
     outputs.append(x)
     # NOTE: Here we append None to specify that the preceding layer is a output layer
     layers.append(None)
@@ -164,10 +175,10 @@ def conv_layer(x, block, layers, cur):
     if strides > 1:
         x = ZeroPadding2D(((1, 0), (1, 0)))(x)
 
-    x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights, trainable=False)(x)
+    x = conv_op(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights, trainable=False)(x)
 
     if batch_norm:
-        x = BatchNormalization(weights=bn_weights, trainable=False)(x)
+        x = bn_op(weights=bn_weights, trainable=False)(x)
         x = LeakyReLU(alpha=0.1)(x)
 
     layers.append(x)
@@ -188,10 +199,10 @@ def conv_transpose_layer(x, block, layers):
         padding = "VALID"
 
    
-    x = Conv2DTranspose(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding)(x)
+    x = convtrans_op(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding)(x)
 
     if batch_norm:
-        x = BatchNormalization()(x)
+        x = bn_op()(x)
         x = LeakyReLU(alpha=0.1)(x)
 
     layers.append(x)
