@@ -12,6 +12,9 @@ yolov3/coco.gshortcut
 **.pyc
 
 # Developer-dependent
-ios/ObjectDetection.xcodeproj/project.pbxproj
+# ios/ObjectDetection.xcodeproj/project.pbxproj
 ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad/UserInterfaceState.xcuserstate
 
+# Model ckpt
+efficientdet/__pycache__
+efficientdet/efficientdet-d0
