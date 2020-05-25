@@ -17,6 +17,7 @@ outputs, depth = Yolov3_Tiny(inputs)
 model = Model(inputs, (outputs, depth))
 
 model.compile(optimizer='rmsprop', loss='mean_squared_error')
+print(model.summary())
 
 trainer = Trainer(model)
 epochs = 1
@@ -27,6 +28,7 @@ train_data_dir = "../nyu_test.csv"
 images, gts = load_images(train_data_dir)
 batches = create_batches(images, gts, batch_size=100)
 
+train = True
 # x_eval = images[-2:]
 # y_eval = gts[-2:]
 # x_train = images[:-2]
@@ -40,19 +42,24 @@ batches = create_batches(images, gts, batch_size=100)
 #                     # validation_data=(x_val, y_val),)
 
 # print('\nhistory dict:', history.history)
+if train:
+    print("Start training")
+    for e in range(epochs):
+        ckpt_dir = "../ckpt/cp_{}".format(e)
+        for idx, batch in enumerate(batches):
+            images, gts = batch
+            start = time.time()
+            loss = trainer.train(images, gts)
+            print('Epoch {} Batch {} loss={} ---- {}s'.format(e, idx, loss, time.time()-start)) 
+        
+        model.save_weights(ckpt_dir)
+        print("Epoch {}, saving weights".format(e))
+    print("Finish Train")
 
-print("Start training")
-for e in range(epochs):
-    ckpt_dir = "../ckpt/cp_{}".format(e)
-    for idx, batch in enumerate(batches):
-        images, gts = batch
-        start = time.time()
-        loss = trainer.train(images, gts)
-        print('Epoch {} Batch {} loss={} ---- {}s'.format(e, idx, loss, time.time()-start)) 
-    
-    model.save_weights(ckpt_dir)
-    print("Epoch {}, saving weights".format(e))
-print("Finish Train")
+else:
+    pass
+    # test_img = 
+    # model.predict()
 
 
 # for layer in model.layers[]:
