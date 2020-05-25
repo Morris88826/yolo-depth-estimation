@@ -168,66 +168,31 @@ class ModelDataHandler: NSObject {
     //print(a[1...10])
     var bboxes: [BoundingBox] = []
     
-    var d1 = 0
-    for _ in 0...12 {
-      for _ in 0...12 {
-        for _ in 0...2 {
-          
-          var rect = CGRect.zero
-          rect.origin.x = CGFloat(a[d1+0])
-          rect.origin.y = CGFloat(a[d1+1])
-          rect.size.width = CGFloat(a[d1+2])
-          rect.size.height = CGFloat(a[d1+3])
-          
-          let objectness = Float(a[d1+4])
-          if objectness > confidenceThresh {
-            var maxClass: Int = -1
-            var maxClassScore: Float = 0.0
-            for c in 0...79 {
-              let classScore = Float(a[d1+5+c])
-              if classScore  > maxClassScore {
-                maxClass = c
-                maxClassScore = classScore
-              }
-            }
-            if maxClass > -1 {
-              bboxes.append(BoundingBox(classIndex: maxClass, confidence: maxClassScore, rect: rect))
-            }
+    for d1 in stride(from: 0, to: 2535*85, by: 85) {
+      
+      var rect = CGRect.zero
+      rect.origin.x = CGFloat(a[d1+0])
+      rect.origin.y = CGFloat(a[d1+1])
+      rect.size.width = CGFloat(a[d1+2])
+      rect.size.height = CGFloat(a[d1+3])
+      
+      let objectness = Float(a[d1+4])
+      if objectness > confidenceThresh {
+        var maxClass: Int = -1
+        var maxClassScore: Float = 0.0
+        for c in 0...79 {
+          let classScore = Float(a[d1+5+c])
+          if classScore  > maxClassScore {
+            maxClass = c
+            maxClassScore = classScore
           }
-          d1 += 85
-          
+        }
+        if maxClass > -1 {
+          bboxes.append(BoundingBox(classIndex: maxClass, confidence: maxClassScore, rect: rect))
         }
       }
     }
-    for _ in 0...25 {
-      for _ in 0...25 {
-        for _ in 0...2 {
-          
-          var rect = CGRect.zero
-          rect.origin.x = CGFloat(a[d1+0])
-          rect.origin.y = CGFloat(a[d1+1])
-          rect.size.width = CGFloat(a[d1+2])
-          rect.size.height = CGFloat(a[d1+3])
-          
-          let objectness = Float(a[d1+4])
-          if objectness > confidenceThresh {
-            var maxClass: Int = -1
-            var maxClassScore: Float = 0.0
-            for c in 0...79 {
-              let classScore = Float(a[d1+5+c])
-              if classScore  > maxClassScore {
-                maxClass = c
-                maxClassScore = classScore
-              }
-            }
-            if maxClass > -1 {
-              bboxes.append(BoundingBox(classIndex: maxClass, confidence: maxClassScore, rect: rect))
-            }
-          }
-          d1 += 85
-        }
-      }
-    }
+    
     bboxes = nonMaxSuppression(
       boundingBoxes: bboxes, num_classes: 80, confidence: confidenceThresh, nms_threshold: nmsThresh)
       

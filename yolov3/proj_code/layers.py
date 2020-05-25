@@ -23,47 +23,50 @@ class YoloLayer(tf.keras.layers.Layer):
         self.anchors = anchors
         self.input_dims = input_dims
 
-    def call(self, prediction):
+    def call(self, prediction):  # prediction.shape = (None, 13, 13, 3*85=255)
+
         batch_size = tf.shape(prediction)[0]
 
-        stride = self.input_dims // tf.shape(prediction)[1]
-        grid_size = self.input_dims // stride
-        num_anchors = len(self.anchors)
+        stride = self.input_dims // tf.shape(prediction)[1]  # stride := 416 // 13 = 32
+        grid_size = self.input_dims // stride  # grid_size := 416 // 32 = 13    # Why not just tf.shape(prediction)[1]????
+        num_anchors = len(self.anchors) # num_achors := 3 (only 3 are masked)
+
+        assert(num_anchors == 3)
 
         prediction = tf.reshape(prediction,
-                                shape=(batch_size, num_anchors * grid_size * grid_size, self.num_classes + 5))
+                                shape=(batch_size, num_anchors * grid_size * grid_size, self.num_classes + 5))  # prediction [None x 3*13*13 x 80+5]
 
-        box_xy = tf.sigmoid(prediction[:, :, :2])  # t_x (box x and y coordinates)
-        objectness = tf.sigmoid(prediction[:, :, 4])  # p_o (objectness score)
-        objectness = tf.expand_dims(objectness, 2)  # To make the same number of values for axis 0 and 1
+        box_xy = tf.sigmoid(prediction[:, :, :2])  # t_x (box x and y coordinates)  [3 x 3*13*13 x 2]
+        objectness = tf.sigmoid(prediction[:, :, 4])  # p_o (objectness score)  [3 x 3*13*13]
+        objectness = tf.expand_dims(objectness, 2)  # To make the same number of values for axis 0 and 1  [3 x 3*13*13 x 1]
 
-        grid = tf.range(grid_size)
-        a, b = tf.meshgrid(grid, grid)
+        grid = tf.range(grid_size)  # grid := [0, 1, ... , 12]
+        a, b = tf.meshgrid(grid, grid)  # a := [[0,1...], [0,1...]...];  b:= [[0,0...], [1,1...]...]
 
-        x_offset = tf.reshape(a, (-1, 1))
-        y_offset = tf.reshape(b, (-1, 1))
+        x_offset = tf.reshape(a, (-1, 1))  # x_offset := [0,1,...,0,1,...]
+        y_offset = tf.reshape(b, (-1, 1))  # y_offset := [0,0,...,1,1,...]
 
 
-        x_y_offset = tf.concat([x_offset, y_offset], axis=-1)
-        x_y_offset = tf.reshape(tf.tile(x_y_offset, [1, num_anchors]), [1, -1, 2])
-        x_y_offset = tf.cast(x_y_offset, dtype='float32')
+        x_y_offset = tf.concat([x_offset, y_offset], axis=-1)  # all grid coordinates, [[0,0],[1,0],[2,0],...]
+        x_y_offset = tf.reshape(tf.tile(x_y_offset, [1, num_anchors]), [1, -1, 2])  # [[[0,0],[0,0],[0,0], [1,0],[1,0],[1,0],...]]
+        x_y_offset = tf.cast(x_y_offset, dtype='float32')  # shape=[1 x 13*13*3 x 2]
 
         box_xy += x_y_offset
 
         # Log space transform of the height and width
-        anchors = tf.cast([(a[0] / stride, a[1] / stride) for a in self.anchors], dtype='float32')
-        anchors = tf.tile(anchors, (grid_size * grid_size, 1))
-        anchors = tf.expand_dims(anchors, 0)
+        anchors = tf.cast([(a[0] / stride, a[1] / stride) for a in self.anchors], dtype='float32')  # [3 x 2]
+        anchors = tf.tile(anchors, (grid_size * grid_size, 1))  # [13*13*3 x 2]
+        anchors = tf.expand_dims(anchors, 0)  # [1 x 13*13*3 x 2]
 
-        box_wh = tf.exp(prediction[:, :, 2:4]) * anchors
+        box_wh = tf.exp(prediction[:, :, 2:4]) * anchors  # [None x 3*13*13 x 2] * [1 x 13*13*3 x 2]
 
         # Sigmoid class scores
         class_scores = tf.sigmoid(prediction[:, :, 5:])
 
         # Resize detection map back to the input image size
         stride = tf.cast(stride, dtype='float32')
-        box_xy *= stride
-        box_wh *= stride
+        box_xy *= stride  # [3 x 3*13*13 x 2]  [0, 13) *= 32
+        box_wh *= stride  # [3 x 3*13*13 x 2]  (0,inf) *= 32
 
         # Convert centoids to top left coordinates
         box_xy -= box_wh / 2
@@ -89,7 +92,7 @@ def yolo_layer(x, block, layers, outputs, input_dims):
         
         # Anchors used based on mask indices
         anchors = [a for a in block['anchors'].split(',  ')]
-        anchors = [anchors[i] for i in range(len(anchors)) if i in masks]
+        anchors = [anchors[i] for i in range(len(anchors)) if i in masks]  # equivalent to 'for i in masks'?
         anchors = [[int(a) for a in anchor.split(',')] for anchor in anchors]
         classes = int(block['classes'])
 
