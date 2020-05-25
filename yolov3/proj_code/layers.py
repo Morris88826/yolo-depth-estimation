@@ -129,7 +129,7 @@ def route_layer(x, block, layers):
 
 def upsample_layer(x, block, layers):
     size = int(block["stride"])
-    x = Lambda(lambda _x: tf.compat.v1.image.resize_bilinear(_x, (size * tf.shape(_x)[1], size * tf.shape(_x)[2])))(x)
+    x = Lambda(lambda _x: tf.compat.v1.image.resize_bilinear(_x, (size * _x.shape[1], size * _x.shape[2])))(x)
     layers.append(x)
     return x, layers
 

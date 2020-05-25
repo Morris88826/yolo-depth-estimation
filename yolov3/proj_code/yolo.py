@@ -14,7 +14,7 @@ def Yolov3_Tiny(inputs):
     
     for i, block in enumerate(blocks):
         block_type = block["type"]
-        print("{} {}".format(i-1, block_type))
+        # print("{} {}".format(i-1, block_type))
         # print("Input shape: ", x.shape)
         if block_type == "convolutional":
             x, layers, weights_ptr = conv_layer(x, block, layers, weights_ptr)
