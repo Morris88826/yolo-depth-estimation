@@ -23,7 +23,7 @@ epochs = 1
 batches = []
 
 # Prepare traininng images for depth
-train_data_dir = "../nyu_eval.csv"
+train_data_dir = "../nyu_test.csv"
 images, gts = load_images(train_data_dir)
 batches = create_batches(images, gts, batch_size=100)
 
@@ -32,7 +32,8 @@ batches = create_batches(images, gts, batch_size=100)
 # x_train = images[:-2]
 # y_train = gts[:-2]
 
-# # Train the model.
+
+# Train the model.
 # print('# Fit model on training data')
 # history = model.fit(x_train, y_train, )
 #                     # batch_size=100, epochs=epochs, 
@@ -63,7 +64,7 @@ print("Finish Train")
 
 
 # Save and convert model
-save_model(model, model_path="../models/yolov3-depth-tiny.h5")
+# save_model(model, model_path="../models/yolov3-depth-tiny.h5")
 # save_and_convert(model)
 
 # # Load tflite

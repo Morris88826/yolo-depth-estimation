@@ -108,7 +108,20 @@ def route_layer(x, block, layers):
         layers.append(x)
 
     else:
-        x = Concatenate()([layers[select_layer_idx[0]], layers[select_layer_idx[1]]])
+        # Speficy shapes to avoid error in concat
+        l0 = layers[select_layer_idx[0]]
+        l1 = layers[select_layer_idx[1]]
+        # l0s = list(l0.shape)
+        # l1s = list(l1.shape)
+        # for d in range(len(l0s)):
+        #     if l0s[d] is None:
+        #         l0s[d] = l1s[d]
+        #     elif l1s[d] is None:
+        #         l1s[d] = l0s[d]
+        # l0 = tf.ensure_shape(l0, tuple(l0s))
+        # l1 = tf.ensure_shape(l1, tuple(l1s))
+
+        x = Concatenate()([l0, l1])
         layers.append(x)
 
     return x, layers
