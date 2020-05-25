@@ -40,7 +40,7 @@ def Yolov3_Tiny(inputs):
 
     
     outputs = tf.keras.layers.Concatenate(axis=1)(outputs)
-
+    x = tf.sigmoid(x)
     # Run NMS
     # outputs = non_maximum_suppression(outputs, confidence=0.5, num_classes=80, nms_threshold=0.5)
 
