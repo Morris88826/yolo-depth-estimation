@@ -48,6 +48,7 @@ At the end of this step you should have a file called ```ObjectDetection.xcworks
 
 5. Build and run the app in Xcode.
 You'll have to grant permissions for the app to use the device's camera. Point the camera at various objects and enjoy seeing how the model classifies things!
+   * Connect your iPhone to your Mac
    * Go to `Settings > General > Device Management` and verify our app.
 
 ## Model Used

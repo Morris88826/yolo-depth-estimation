@@ -44,7 +44,7 @@ def non_maximum_suppression(net_output, confidence, num_classes, nms_threshold =
         # object_prediction.shape = 2535 x (5+2) = 2535 x 7
         object_prediction = np.concatenate((object_prediction[:,:5], max_values, max_indices), 1)
 
-        non_zero_idx = np.nonzero(object_prediction[:,4])[0]
+        non_zero_idx = np.nonzero(object_prediction[:,4])[0]  # [4]: objectness score
 
         # non_zero_idx = tf.where(object_prediction[:,4]!=0)
         if non_zero_idx.shape[0] == 0:
@@ -112,23 +112,25 @@ def find_unique(input):
 
 def bounding_box_IoU(box1, box2):
     # box1.shape[N,7] box2.shape[M,7]
-    b1_x1, b1_y1, b1_x2, b1_y2 = box1[:,0], box1[:,1], box1[:,2], box1[:,3]
-    b2_x1, b2_y1, b2_x2, b2_y2 = box2[:,0], box2[:,1], box2[:,2], box2[:,3]
+    b1_x1, b1_y1, b1_w, b1_h = box1[:,0], box1[:,1], box1[:,2], box1[:,3]
+    b2_x1, b2_y1, b2_w, b2_h = box2[:,0], box2[:,1], box2[:,2], box2[:,3]
+
+    b1_x2, b1_y2 = b1_x1 + b1_w, b1_y1 + b1_h
+    b2_x2, b2_y2 = b2_x1 + b2_w, b2_y1 + b2_h
 
     #get the corrdinates of the intersection rectangle
-    inter_rect_x1 =  np.maximum(b1_x1, b2_x1)
-    inter_rect_y1 =  np.maximum(b1_y1, b2_y1)
-    inter_rect_x2 =  np.minimum(b1_x2, b2_x2)
-    inter_rect_y2 =  np.minimum(b1_y2, b2_y2)
+    inter_rect_x1 =  np.minimum(b1_x1, b2_x1)
+    inter_rect_y1 =  np.minimum(b1_y1, b2_y1)
+    inter_rect_x2 =  np.maximum(b1_x2, b2_x2)
+    inter_rect_y2 =  np.maximum(b1_y2, b2_y2)
     
     #Intersection area
     inter_area = np.clip(inter_rect_x2 - inter_rect_x1 + 1,a_max=None, a_min=0) * np.clip(inter_rect_y2 - inter_rect_y1 + 1,a_max=None, a_min=0)
     #Union Area
-    b1_area = (b1_x2 - b1_x1 + 1)*(b1_y2 - b1_y1 + 1)
-    b2_area = (b2_x2 - b2_x1 + 1)*(b2_y2 - b2_y1 + 1)
+    b1_area = b1_w * b1_h
+    b2_area = b2_w * b2_h
     
     # iou = inter_area / (b1_area + b2_area - inter_area)
     iou = inter_area / np.minimum(b1_area, b2_area)
     
     return iou
-    

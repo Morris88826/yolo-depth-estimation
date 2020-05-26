@@ -2,15 +2,38 @@
 yolov3/weights/*
 yolov3/results/*
 yolov3/models/*
-yolov3/yolov3/proj_code/__pycache__/*
+yolov3/coco/*
+yolov3/**.gshortcut
+yolov3/ckpt/*
+yolov3/ckpt_5_1e-4_v1/*
+yolov3/ckpt_5_1e-5_v1/*
+yolov3/ckpt_5_1e-5_v2/*
+yolov3/data/nyu_pickle/*
+yolov3/ckpt_2/*
+
+
+yolov3/data/nyu_depth_v2_labeled.mat
+yolov3/data/nyu_datasets
+yolov3/ckpt.gshortcut
+yolov3/coco.gshortcut
+yolov3/data/nyu_datasets.gshortcut
+yolov3/proj_code/nyu_depth_v2_labeled.mat
+yolov3/nyu_eval.csv
 
 # MacOS-generated directory metadata
 **/.DS_Store
 
 # Caches
-**/*.pyc
+**.pyc
 
 # Developer-dependent
 # ios/ObjectDetection.xcodeproj/project.pbxproj
-ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad/UserInterfaceState.xcuserstate
+ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad
 
+# Model ckpt
+efficientdet/__pycache__
+efficientdet/efficientdet-d0
+
+
+yolov3/proj_code/logs**
+yolov3/proj_code/val2017/*

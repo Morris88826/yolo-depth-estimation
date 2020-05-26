@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import tensorflow as tf
 
+
+
 def letterbox_image(img, inp_dim):
     '''resize image with unchanged aspect ratio using padding'''
     img_w, img_h = img.shape[1], img.shape[0]
@@ -42,3 +44,4 @@ def get_test_input(size):
     img = cv2.imread("../images/test1.png")
     img = preprocess_image(img, size)         #Resize to the input dimension
     return img
+
