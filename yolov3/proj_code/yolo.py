@@ -44,14 +44,16 @@ def Yolov3_Tiny(inputs, cfg_file = "../cfg/yolov3-depth-tiny.cfg"):
     # output_layers = [layers[i - 1] for i in range(len(layers)) if layers[i] is None]
 
     
+
     outputs = tf.keras.layers.Concatenate(axis=1)(outputs)
     # x = tf.sigmoid(x)
 
     # print(x.shape)
+
     # Run NMS
     # outputs = non_maximum_suppression(outputs, confidence=0.5, num_classes=80, nms_threshold=0.5)
 
     return (outputs,x) # outputs: yolo bounding box, x: depth
-
+    # return x
 
 

@@ -28,7 +28,7 @@ yolov3/nyu_eval.csv
 
 # Developer-dependent
 # ios/ObjectDetection.xcodeproj/project.pbxproj
-ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad/UserInterfaceState.xcuserstate
+ios/ObjectDetection.xcworkspace/xcuserdata/shanglinghsu.xcuserdatad
 
 # Model ckpt
 efficientdet/__pycache__
@@ -36,3 +36,4 @@ efficientdet/efficientdet-d0
 
 
 yolov3/proj_code/logs**
+yolov3/proj_code/val2017/*
