@@ -4,6 +4,13 @@ yolov3/results/*
 yolov3/models/*
 yolov3/coco/*
 yolov3/**.gshortcut
+yolov3/ckpt/*
+yolov3/ckpt_5_1e-4_v1/*
+yolov3/ckpt_5_1e-5_v1/*
+yolov3/ckpt_5_1e-5_v2/*
+yolov3/data/nyu_pickle/*
+yolov3/ckpt_2/*
+
 
 yolov3/data/nyu_depth_v2_labeled.mat
 yolov3/data/nyu_datasets
