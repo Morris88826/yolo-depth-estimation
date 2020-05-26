@@ -100,6 +100,23 @@ def yolo_layer(x, block, layers, outputs, input_dims):
 
     return x, layers, outputs
 
+def residual_layer(x, block, layers):
+    select_layer_idx = [int(l) for l in block['layers'].split(',')]
+
+    if len(select_layer_idx) == 1:
+        x = layers[select_layer_idx[0]]
+        layers.append(x)
+
+    else:
+        # Speficy shapes to avoid error in concat
+        l0 = layers[select_layer_idx[0]]
+        l1 = layers[select_layer_idx[1]]
+
+        x = l0 + l1
+        layers.append(x)
+
+    return x, layers    
+
 def route_layer(x, block, layers):
     select_layer_idx = [int(l) for l in block['layers'].split(',')]
 
@@ -142,46 +159,54 @@ def conv_layer(x, block, layers, cur):
         filters = int(block["filters"])
         activation = block["activation"]
         batch_norm = 'batch_normalize' in block
+        train = not 'train' in block
         padding = "VALID"
 
         
         if strides == 1:
             padding = "SAME"
 
+        if train:
+            prev_layer_shape = tf.keras.backend.int_shape(x)
+            weights_shape = (kernel_size, kernel_size, prev_layer_shape[-1], filters) # The shape for weight height x width x in_channel x out_channel
+            conv_weight_shape = (filters, prev_layer_shape[-1], kernel_size, kernel_size) # The sequence the stored in weight file
+            num_conv_weights = np.product(weights_shape)
 
-        prev_layer_shape = tf.keras.backend.int_shape(x)
-        weights_shape = (kernel_size, kernel_size, prev_layer_shape[-1], filters) # The shape for weight height x width x in_channel x out_channel
-        conv_weight_shape = (filters, prev_layer_shape[-1], kernel_size, kernel_size) # The sequence the stored in weight file
-        num_conv_weights = np.product(weights_shape)
+            if batch_norm:
+                bn_weights = m_weights[cur:cur+4*filters] # [beta, gamma, moving_mean, moving_var]
+                cur += 4*filters
+                bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]] 
+                        
+            else:
+                conv_bias = m_weights[cur:cur+filters]
+                cur += filters
 
-        if batch_norm:
-            bn_weights = m_weights[cur:cur+4*filters] # [beta, gamma, moving_mean, moving_var]
-            cur += 4*filters
-            bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]] 
-                    
+            conv_weights = m_weights[cur:cur+num_conv_weights]
+            cur += num_conv_weights
+
+            conv_weights = conv_weights.reshape(conv_weight_shape).transpose([2, 3, 1, 0])
+
+            if batch_norm:
+                conv_weights = [conv_weights]
+            else:
+                conv_weights = [conv_weights, conv_bias]
+
+
+            if strides > 1:
+                x = ZeroPadding2D(((1, 0), (1, 0)))(x)
+
+            x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights, trainable=False)(x)
+
+            if batch_norm:
+                x = BatchNormalization(weights=bn_weights, trainable=False)(x)
+                x = LeakyReLU(alpha=0.1)(x)
+        
         else:
-            conv_bias = m_weights[cur:cur+filters]
-            cur += filters
-
-        conv_weights = m_weights[cur:cur+num_conv_weights]
-        cur += num_conv_weights
-
-        conv_weights = conv_weights.reshape(conv_weight_shape).transpose([2, 3, 1, 0])
-
-        if batch_norm:
-            conv_weights = [conv_weights]
-        else:
-            conv_weights = [conv_weights, conv_bias]
-
-
-        if strides > 1:
-            x = ZeroPadding2D(((1, 0), (1, 0)))(x)
-
-        x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm, weights=conv_weights, trainable=False)(x)
-
-        if batch_norm:
-            x = BatchNormalization(weights=bn_weights, trainable=False)(x)
-            x = LeakyReLU(alpha=0.1)(x)
+            x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=not batch_norm)(x)
+            
+            if batch_norm:
+                x = BatchNormalization()(x)
+                x = LeakyReLU(alpha=0.1)(x)
 
         layers.append(x)
     
