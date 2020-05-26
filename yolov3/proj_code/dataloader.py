@@ -31,7 +31,7 @@ def load_images(csvfile, size = 416):
     return np.array(images), np.array(gts)
 
 def create_batches(images, gts, batch_size):
-    num_batches = images.shape[0] // batch_size + 1
+    num_batches = (images.shape[0]-1+batch_size) // batch_size
     batches = []
 
     for i in range(num_batches):
