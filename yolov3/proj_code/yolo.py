@@ -1,12 +1,14 @@
 import tensorflow as tf
 import numpy as np
-from layers import conv_layer, maxpool_layer, upsample_layer, route_layer, yolo_layer, conv_transpose_layer
+from layers import conv_layer, maxpool_layer, upsample_layer, route_layer, yolo_layer, conv_transpose_layer, residual_layer
 from util import parse_cfg
 
-cfg_file = "../cfg/yolov3-depth-tiny.cfg"
-blocks = parse_cfg(cfg_file)
 
-def Yolov3_Tiny(inputs):
+
+
+def Yolov3_Tiny(inputs, cfg_file = "../cfg/yolov3-depth-tiny.cfg"):
+    blocks = parse_cfg(cfg_file)
+    # print(blocks)
     x, layers, outputs = inputs, [], []
     weights_ptr = 0
     config = {}
@@ -33,18 +35,25 @@ def Yolov3_Tiny(inputs):
 
         elif block_type == "convolutional_transpose":
             x, layers = conv_transpose_layer(x, block, layers)
+        
+        elif block_type == "residual":
+            x, layers = residual_layer(x, block, layers)
 
         # print("Output shape: ", x.shape)
         # print("")
     # output_layers = [layers[i - 1] for i in range(len(layers)) if layers[i] is None]
 
     
+
     outputs = tf.keras.layers.Concatenate(axis=1)(outputs)
-    x = tf.sigmoid(x)
+    # x = tf.sigmoid(x)
+
+    # print(x.shape)
+
     # Run NMS
     # outputs = non_maximum_suppression(outputs, confidence=0.5, num_classes=80, nms_threshold=0.5)
 
     return (outputs,x) # outputs: yolo bounding box, x: depth
-
+    # return x
 
 

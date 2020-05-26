@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
-    <device id="retina4_7" orientation="portrait">
-        <adaptation id="fullscreen"/>
-    </device>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16096" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14460.20"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -12,45 +11,21 @@
         <!--View Controller-->
         <scene sceneID="tne-QT-ifu">
             <objects>
-                <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="ObjectDetection" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="Object_Detection" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="jhC-YW-J6Q" customClass="PreviewView" customModule="ObjectDetection" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="jhC-YW-J6Q" customClass="PreviewView" customModule="Object_Detection" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="-20" width="375" height="687"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="tyX-XX-qft" customClass="OverlayView" customModule="ObjectDetection" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="RqP-HE-5qz">
-                                        <rect key="frame" x="0.0" y="-25" width="375" height="100"/>
-                                        <subviews>
-                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="tfl_logo" translatesAutoresizingMaskIntoConstraints="NO" id="SdB-Ww-kKt">
-                                                <rect key="frame" x="16" y="56" width="160" height="24"/>
-                                                <constraints>
-                                                    <constraint firstAttribute="width" constant="160" id="Hxk-Ra-r7j"/>
-                                                    <constraint firstAttribute="height" constant="24" id="gFf-7C-Qc1"/>
-                                                </constraints>
-                                            </imageView>
-                                        </subviews>
-                                        <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.50341497319999995" colorSpace="custom" customColorSpace="sRGB"/>
-                                        <constraints>
-                                            <constraint firstItem="SdB-Ww-kKt" firstAttribute="leading" secondItem="RqP-HE-5qz" secondAttribute="leading" constant="16" id="bI9-df-ZQV"/>
-                                            <constraint firstAttribute="height" constant="100" id="hk5-85-52j"/>
-                                            <constraint firstAttribute="bottom" secondItem="SdB-Ww-kKt" secondAttribute="bottom" constant="20" id="rP5-hM-Qxu"/>
-                                        </constraints>
-                                    </view>
-                                </subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="tyX-XX-qft" customClass="OverlayView" customModule="Object_Detection" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="-20" width="375" height="687"/>
                                 <color key="backgroundColor" white="1" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <constraints>
-                                    <constraint firstAttribute="trailing" secondItem="RqP-HE-5qz" secondAttribute="trailing" id="Glo-oM-bi1"/>
-                                    <constraint firstItem="RqP-HE-5qz" firstAttribute="leading" secondItem="tyX-XX-qft" secondAttribute="leading" id="k9E-Lh-r1l"/>
-                                </constraints>
                             </view>
                             <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0vh-Hu-Nap">
-                                <rect key="frame" x="131" y="321" width="113" height="40"/>
+                                <rect key="frame" x="131" y="311" width="113" height="40"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="40" id="c2m-U6-foP"/>
                                 </constraints>
@@ -60,7 +35,7 @@
                                 </connections>
                             </button>
                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Camera Unavailable" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LAO-dO-grc">
-                                <rect key="frame" x="20" y="291" width="335" height="25"/>
+                                <rect key="frame" x="20" y="281" width="335" height="25"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="25" id="MGk-Ei-Sj1"/>
                                 </constraints>
@@ -68,7 +43,7 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ro1-YL-L1d" customClass="CurvedView" customModule="ObjectDetection" customModuleProvider="target">
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ro1-YL-L1d" customClass="CurvedView" customModule="Object_Detection" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="451" width="375" height="216"/>
                                 <subviews>
                                     <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="X6N-mc-Zhj">
@@ -100,7 +75,6 @@
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="tyX-XX-qft" firstAttribute="bottom" secondItem="jhC-YW-J6Q" secondAttribute="bottom" id="33b-ks-zuf"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="top" secondItem="RqP-HE-5qz" secondAttribute="top" constant="45" id="6EF-3u-avy"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="jhC-YW-J6Q" secondAttribute="trailing" id="83W-Qu-4uJ"/>
                             <constraint firstItem="tyX-XX-qft" firstAttribute="leading" secondItem="jhC-YW-J6Q" secondAttribute="leading" id="DpY-T9-f2F"/>
                             <constraint firstItem="LAO-dO-grc" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" constant="-40" id="FEO-rc-Vc3"/>
@@ -131,11 +105,12 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
+            <point key="canvasLocation" x="140" y="430"/>
         </scene>
         <!--Inference View Controller-->
         <scene sceneID="3Ap-WK-W08">
             <objects>
-                <viewController id="H9B-4l-MbM" customClass="InferenceViewController" customModule="ObjectDetection" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="H9B-4l-MbM" customClass="InferenceViewController" customModule="Object_Detection" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="rF4-XE-YOF">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="156"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -144,7 +119,7 @@
                                 <rect key="frame" x="0.0" y="0.0" width="375" height="103"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <prototypes>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="INFO_CELL" rowHeight="161" id="uTx-Z2-72z" customClass="InfoCell" customModule="ObjectDetection" customModuleProvider="target">
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="INFO_CELL" rowHeight="161" id="uTx-Z2-72z" customClass="InfoCell" customModule="Object_Detection" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="28" width="375" height="161"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="uTx-Z2-72z" id="evn-BS-Oui">
@@ -220,7 +195,7 @@
                                 </constraints>
                             </view>
                             <stepper opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" maximumValue="100" translatesAutoresizingMaskIntoConstraints="NO" id="tjf-Ot-aGc">
-                                <rect key="frame" x="265" y="107" width="94" height="29"/>
+                                <rect key="frame" x="265" y="105.5" width="94" height="32"/>
                                 <color key="tintColor" red="0.45882352939999999" green="0.45882352939999999" blue="0.45882352939999999" alpha="1" colorSpace="calibratedRGB"/>
                                 <connections>
                                     <action selector="onClickThreadStepper:" destination="H9B-4l-MbM" eventType="valueChanged" id="pLw-Fj-8Vc"/>
@@ -255,6 +230,5 @@
     </scenes>
     <resources>
         <image name="down_icon" width="20" height="6"/>
-        <image name="tfl_logo" width="160" height="24"/>
     </resources>
 </document>
