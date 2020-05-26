@@ -25,7 +25,7 @@ typealias FileInfo = (name: String, extension: String)
 
 /// Information about the Yolo model.
 enum Yolo {
-  static let modelInfo: FileInfo = (name: "yolov3-tiny", extension: "tflite")
+  static let modelInfo: FileInfo = (name: "yolov3-depth-tiny", extension: "tflite")
   static let labelsInfo: FileInfo = (name: "coco", extension: "names")
 }
 
@@ -44,9 +44,9 @@ class ModelDataHandler: NSObject {
   let nmsThresh: Float = 0.4
 
   // MARK: Model parameters
-  let batchSize = 1 /// We need a pair of photos each time # TODO: Change it back to 2
+  let batchSize = 1
   let inputChannels = 3
-  let inputWidth = 416 /// The Width and Height of YOLO should better be a multiple of 32
+  let inputWidth = 416 /// The Width and Height of YOLO should better be a multiple of 26
   let inputHeight = 416
 
   // MARK: Private properties
@@ -133,6 +133,7 @@ class ModelDataHandler: NSObject {
 
     let interval: TimeInterval
     let outputs: Tensor
+    let depths: Tensor
     do {
       let inputTensor = try interpreter.input(at: 0)
 
@@ -145,7 +146,7 @@ class ModelDataHandler: NSObject {
         print("Failed to convert the image buffer to RGB data.")
         return nil
       }
-
+      
       // Copy the RGB data to the input `Tensor`.
       try interpreter.copy(rgbData, toInputAt: 0)
 
@@ -157,6 +158,7 @@ class ModelDataHandler: NSObject {
 
       
       outputs = try interpreter.output(at: 0) /// [1, (13*13+26*26)*3, 4+1+80]
+      depths = try interpreter.output(at: 1)
     } catch let error {
       print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
       return nil
@@ -203,7 +205,11 @@ class ModelDataHandler: NSObject {
       width: CGFloat(imageWidth),
       height: CGFloat(imageHeight)
     )
-
+    
+    // Depth
+    /// should be of shape (1x)
+    let depth = [Float](unsafeData: depths.data) ?? []
+    
     // Returns the inference time and inferences
     let result = Result(inferenceTime: interval, inferences: resultArray)
     return result

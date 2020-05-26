@@ -23,9 +23,10 @@
 		AAAB09702189838A0015A1F2 /* CVPixelBufferExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAB096F2189838A0015A1F2 /* CVPixelBufferExtension.swift */; };
 		AAC58495214797E800FB532F /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC58494214797E800FB532F /* StringExtension.swift */; };
 		AAEF3D8D21A2BE2B0073AE1C /* UIColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEF3D8C21A2BE2B0073AE1C /* UIColorExtension.swift */; };
-		CC2C0C2E2471C55C00B5F498 /* yolov3-tiny.tflite in Resources */ = {isa = PBXBuildFile; fileRef = CC2C0C2C2471C55C00B5F498 /* yolov3-tiny.tflite */; };
 		CC2C0C302471C59600B5F498 /* coco.names in Resources */ = {isa = PBXBuildFile; fileRef = CC2C0C2F2471C59500B5F498 /* coco.names */; };
 		CC849C94247132D4005F828C /* NonMaxSupression.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC849C93247132D4005F828C /* NonMaxSupression.swift */; };
+		CCE54A7F247D4F3800FDFD6F /* yolov3-depth-tiny.tflite in Resources */ = {isa = PBXBuildFile; fileRef = CCE54A7E247D4F3800FDFD6F /* yolov3-depth-tiny.tflite */; };
+		CCE54A87247D6B8800FDFD6F /* DepthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE54A86247D6B8800FDFD6F /* DepthView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,9 +49,10 @@
 		AAC58494214797E800FB532F /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		AAEF3D8C21A2BE2B0073AE1C /* UIColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIColorExtension.swift; sourceTree = "<group>"; };
 		C4FB5546196B42E787BF4A94 /* Pods-ObjectDetection.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ObjectDetection.release.xcconfig"; path = "Target Support Files/Pods-ObjectDetection/Pods-ObjectDetection.release.xcconfig"; sourceTree = "<group>"; };
-		CC2C0C2C2471C55C00B5F498 /* yolov3-tiny.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = "yolov3-tiny.tflite"; sourceTree = "<group>"; };
 		CC2C0C2F2471C59500B5F498 /* coco.names */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = coco.names; sourceTree = "<group>"; };
 		CC849C93247132D4005F828C /* NonMaxSupression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonMaxSupression.swift; sourceTree = "<group>"; };
+		CCE54A7E247D4F3800FDFD6F /* yolov3-depth-tiny.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = "yolov3-depth-tiny.tflite"; sourceTree = "<group>"; };
+		CCE54A86247D6B8800FDFD6F /* DepthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthView.swift; sourceTree = "<group>"; };
 		CEBF175BF4D3214B206E06BA /* Pods_ObjectDetection.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ObjectDetection.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -87,7 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				CC2C0C2F2471C59500B5F498 /* coco.names */,
-				CC2C0C2C2471C55C00B5F498 /* yolov3-tiny.tflite */,
+				CCE54A7E247D4F3800FDFD6F /* yolov3-depth-tiny.tflite */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -115,6 +117,7 @@
 			children = (
 				AA16E59E2180822B00D9E153 /* CurvedView.swift */,
 				AA756E692150CE88004BB0BC /* OverlayView.swift */,
+				CCE54A86247D6B8800FDFD6F /* DepthView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -245,9 +248,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				CC2C0C302471C59600B5F498 /* coco.names in Resources */,
-				CC2C0C2E2471C55C00B5F498 /* yolov3-tiny.tflite in Resources */,
 				AA9AC5A9212D39FD000B4E9D /* LaunchScreen.storyboard in Resources */,
 				AA9AC5A6212D39FD000B4E9D /* Assets.xcassets in Resources */,
+				CCE54A7F247D4F3800FDFD6F /* yolov3-depth-tiny.tflite in Resources */,
 				AA9AC5A4212D39FC000B4E9D /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -303,6 +306,7 @@
 			files = (
 				AA9AC5E2212D4520000B4E9D /* ViewController.swift in Sources */,
 				AA756E6A2150CE89004BB0BC /* OverlayView.swift in Sources */,
+				CCE54A87247D6B8800FDFD6F /* DepthView.swift in Sources */,
 				AA119EA2217F337300DE46CF /* ModelDataHandler.swift in Sources */,
 				CC849C94247132D4005F828C /* NonMaxSupression.swift in Sources */,
 				AAC58495214797E800FB532F /* StringExtension.swift in Sources */,
