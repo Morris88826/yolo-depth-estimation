@@ -22,6 +22,7 @@ yolov3/nyu_eval.csv
 
 # MacOS-generated directory metadata
 **/.DS_Store
+**.vscode
 
 # Caches
 **.pyc
