@@ -29,3 +29,4 @@ efficientdet/efficientdet-d0
 
 
 yolov3/proj_code/logs**
+yolov3/proj_code/val2017/*
