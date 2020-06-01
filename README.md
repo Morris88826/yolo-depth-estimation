@@ -1,1 +1,2 @@
-# Real-Time Object detection and Depth Prediction with a Single YOLOv3-Tiny variant in TFLite on iOS
+# Real-Time Mobile Object detection and Depth Prediction
+The task is done with a single, one-pass YOLOv3-Tiny variant, deployed in TFLite on iOS.
