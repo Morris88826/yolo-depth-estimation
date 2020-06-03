@@ -2,10 +2,12 @@
 The task is done with a single, one-pass YOLOv3-Tiny variant, deployed in TFLite on iOS.
 
 ## Demo
-Object detection sample results
+Object detection
+
 ![](https://i.imgur.com/ckjno9n.png)
 
 Depth estimation
+
 ![](https://i.imgur.com/aCy3IDy.png)
 
 
