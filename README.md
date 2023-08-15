@@ -1,7 +1,7 @@
 # Real-Time Object Detection with Depth Estimation on Mobile Devices
 The task is done with a single, one-pass YOLOv3-Tiny variant, deployed in TFLite on iOS.
 
-A [paper](https://drive.google.com/file/d/1VZA-PKU2jMtj2Lli7t1vk07MVq2E0vgE/view?usp=sharing) is written to introduce to project.
+A [paper](https://drive.google.com/file/d/1zTWZ_x754_DAo5tZ9z0dgMv2Wxi7b-j1/view?usp=sharing) is written to introduce to project.
 
 
 ## Demo
